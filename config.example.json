@@ -1,0 +1,14 @@
+{
+  "cookie": "把浏览器里的 Cookie 粘贴到这里（不要提交到 git）",
+  "form_id": "123456",
+  "enc": "0123456789abcdef0123456789abcdef",
+  "fid_enc": "0123456789abcdef",
+  "state_fid": "39037",
+  "uuid": "从 F12 抓包填写",
+  "submit_version": "从 F12 抓包填写",
+  "form_template": {},
+  "location": "WHQC",
+  "dry_run": true,
+  "state_path": "state.json",
+  "webhook_url": ""
+}

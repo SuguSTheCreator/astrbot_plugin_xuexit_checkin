@@ -1,0 +1,236 @@
+{
+  "ENABLE": {
+    "description": "总开关",
+    "type": "bool",
+    "default": true
+  },
+  "DRY_RUN": {
+    "description": "演练模式（只检查 Cookie / checkCode，不提交）",
+    "type": "bool",
+    "default": false
+  },
+  "SCHEDULE_TIME": {
+    "description": "每日执行时间（HH:MM，北京时间）",
+    "type": "string",
+    "default": "08:10",
+    "hint": "表单每天 8:00 后开放，建议 08:05～08:30"
+  },
+  "ADMIN_UMOS": {
+    "description": "管理员会话 UMO 列表（用 /checkin_bind 获取）",
+    "type": "list",
+    "default": [],
+    "hint": "留空表示任何人都是管理员"
+  },
+  "SUMMARY_UMOS": {
+    "description": "每日汇总推送的会话 UMO 列表",
+    "type": "list",
+    "default": []
+  },
+  "QR_FID": {
+    "description": "扫码登录用的学校租户 fid",
+    "type": "string",
+    "default": "39037",
+    "hint": "填错会跳到 passport404 页面"
+  },
+  "LOGIN_TTL_SECONDS": {
+    "description": "二维码有效期（秒）",
+    "type": "int",
+    "default": 300,
+    "slider": {
+      "min": 120,
+      "max": 600,
+      "step": 30
+    }
+  },
+  "FORM_ID": {
+    "description": "表单 id",
+    "type": "string",
+    "default": ""
+  },
+  "FORM_ENC": {
+    "description": "表单 enc",
+    "type": "string",
+    "default": ""
+  },
+  "FORM_FID_ENC": {
+    "description": "表单 fidEnc",
+    "type": "string",
+    "default": ""
+  },
+  "STATE_FID": {
+    "description": "学校 fid / stateFid",
+    "type": "string",
+    "default": "39037"
+  },
+  "UUID": {
+    "description": "表单 uuid（抓包获得）",
+    "type": "string",
+    "default": ""
+  },
+  "SUBMIT_VERSION": {
+    "description": "表单 submitVersion（抓包获得）",
+    "type": "string",
+    "default": ""
+  },
+  "FORM_TEMPLATE": {
+    "description": "formIdValueData 模板（JSON）",
+    "type": "text",
+    "default": "",
+    "hint": "提交请求里 formIdValueData 的原文"
+  },
+  "FALLBACK_FORM_DATA": {
+    "description": "备用 formIdValueData（可选，抓包里的加密串）",
+    "type": "text",
+    "default": ""
+  },
+  "LOCATION": {
+    "description": "定位（lat,lng,地址）",
+    "type": "string",
+    "default": ""
+  },
+  "WEBHOOK_URL": {
+    "description": "通用 Webhook（Server酱/Bark），留空不推送",
+    "type": "string",
+    "default": ""
+  },
+  "LOGIN_PROXY": {
+    "description": "登录代理（服务器 IP 被超星拦时填本机反向代理地址）",
+    "type": "string",
+    "default": "",
+    "hint": "例如 http://127.0.0.1:8898；留空表示直连"
+  },
+  "HELPER_PORT": {
+    "description": "登录助手代理端口",
+    "type": "int",
+    "default": 8898,
+    "slider": {
+      "min": 8000,
+      "max": 9999,
+      "step": 1
+    }
+  },
+  "HELPER_IDLE_EXIT": {
+    "description": "助手空闲多少秒自动退出（0=不退出）",
+    "type": "int",
+    "default": 600,
+    "slider": {
+      "min": 0,
+      "max": 3600,
+      "step": 60
+    }
+  },
+  "HELPER_MAX_LIFE": {
+    "description": "助手最长运行秒数（0=不限制）",
+    "type": "int",
+    "default": 3600,
+    "slider": {
+      "min": 0,
+      "max": 7200,
+      "step": 300
+    }
+  },
+  "HELPER_BIND": {
+    "description": "助手在服务器上的绑定地址（留空自动检测）",
+    "type": "string",
+    "default": "",
+    "hint": "一般是 docker 网桥网关，插件会自动探测"
+  },
+  "HELPER_SSH": {
+    "description": "登录助手连接的 SSH 目标",
+    "type": "string",
+    "default": "",
+    "hint": "例如 root@1.2.3.4；留空表示只在本机测试"
+  },
+  "SCHEDULE_WINDOW_MINUTES": {
+    "description": "打卡时间窗口（分钟）：所有账号随机铺在这段窗口内",
+    "type": "int",
+    "default": 40,
+    "slider": {
+      "min": 5,
+      "max": 180,
+      "step": 5
+    }
+  },
+  "RETRY_DELAY_MINUTES": {
+    "description": "失败后多久重试一次（分钟，0 表示不重试）",
+    "type": "int",
+    "default": 35,
+    "slider": {
+      "min": 0,
+      "max": 120,
+      "step": 5
+    }
+  },
+  "ADMIN_IDS": {
+    "description": "主账号的 openid 列表（跨群/私聊都认这个人）",
+    "type": "list",
+    "default": [],
+    "hint": "私聊机器人发 /whoami 可以看到 sender_id"
+  },
+  "AUTO_SYNC": {
+    "description": "自动同步表单参数",
+    "type": "bool",
+    "default": true,
+    "hint": "每次打卡前拉取上次提交，自动更新 uuid / enc / 表单模板；关闭后只用固定配置"
+  },
+  "CONSENT_ACCEPTED": {
+    "description": "用户已阅读并同意数据处理说明",
+    "type": "bool",
+    "default": true,
+    "hint": "面板上的同意勾选状态；取消后停止处理并建议删除已存 Cookie"
+  },
+  "CONSENT_AT": {
+    "description": "同意时间",
+    "type": "string",
+    "default": "",
+    "hint": "记录最近一次勾选同意的时间，用于留痕"
+  },
+  "CONSENT_AT_SOURCE": {
+    "description": "同意时间的来源",
+    "type": "string",
+    "default": "",
+    "hint": "user=用户勾选；backfill=升级时补记（不是本人操作时间）"
+  },
+  "CONSENT_VERSION": {
+    "description": "已同意的数据处理说明版本",
+    "type": "string",
+    "default": "",
+    "hint": "说明文案改了会换版本号，便于判断是否要重新确认"
+  },
+  "MEMBERS": {
+    "description": "成员名单（openid 或 UMO）",
+    "type": "list",
+    "default": [],
+    "hint": "名单里的人能聊天、能用命令；配合 MEMBER_ALL 决定权限多大"
+  },
+  "MEMBER_ALL": {
+    "description": "成员拥有全部权限",
+    "type": "bool",
+    "default": true,
+    "hint": "开启后成员和主账号同权（包括解绑等危险命令）；关闭则只能聊聊天"
+  },
+  "FORM_URL_SOURCE": {
+    "description": "远程表单链接（可选）",
+    "type": "string",
+    "default": "",
+    "hint": "填一个纯文本网址，内容是一行表单链接；程序定期读取，变了就自动换参数，适合长期不维护"
+  },
+  "FORM_URL_CHECK_DAYS": {
+    "description": "远程链接检查间隔（天）",
+    "type": "int",
+    "default": 30,
+    "hint": "默认 30 天查一次；填 0 表示每次打卡前都查"
+  },
+  "ALLOW_SELF_BIND": {
+    "description": "允许陌生用户自助绑定",
+    "type": "bool",
+    "default": false,
+    "hint": "开启后任何能私聊机器人的人都可以用 /bind 绑自己的账号；关闭后只有主账号能发起绑定"
+  },
+  "AUDIT_ENABLED": {
+    "description": "记录操作留痕",
+    "type": "bool",
+    "default": true,
+    "hint": "把同意、改配置、增删用户、手动打卡等写进 audit.jsonl，方便回溯"
+  }
+}

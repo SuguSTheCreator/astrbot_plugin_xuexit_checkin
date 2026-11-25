@@ -1,0 +1,1221 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>超星健康打卡</title>
+<style>
+:root{--bg:#0b0e14;--card:#141922;--card2:#1a2030;--line:#242c3a;--txt:#e9edf5;--sub:#8590a6;
+--brand:#4c8dff;--ok:#22c55e;--warn:#f59e0b;--err:#ef4444;--glow:0 0 0 1px rgba(76,141,255,.15),0 12px 40px rgba(0,0,0,.45)}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--txt);position:relative;
+font:15px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+background:radial-gradient(900px 520px at 18% -12%,#16203a 0%,rgba(22,32,58,0) 70%)}
+.wrap{position:relative;z-index:1}
+::selection{background:rgba(76,141,255,.35)}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-thumb{background:#26303f;border-radius:8px;border:2px solid transparent;background-clip:content-box}
+*::-webkit-scrollbar-thumb:hover{background:#33405a;background-clip:content-box}
+.wrap{max-width:1080px;margin:0 auto;padding:26px 20px 70px}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes openIn{from{opacity:0;transform:translateY(-7px)}to{opacity:1;transform:none}}
+.card{animation:rise .42s cubic-bezier(.22,.9,.32,1) both}
+.card-body{display:grid;grid-template-rows:0fr;opacity:0;
+transition:grid-template-rows .42s cubic-bezier(.4,0,.2,1),opacity .3s ease}
+.card[data-open="1"] .card-body{grid-template-rows:1fr;opacity:1}
+.card-inner{overflow:hidden;min-height:0}
+h1{font-size:22px;margin:0 0 4px;letter-spacing:.3px}
+.sub{color:var(--sub);font-size:13px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;
+background:rgba(255,255,255,.04);border:1px solid var(--line);font-size:13.5px;color:var(--sub);transition:.2s}
+.chip:hover{border-color:#33405a}.chip b{color:var(--txt);font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px rgba(34,197,94,.7)}
+.dot.off{background:#5a6478;box-shadow:none}.dot.warn{background:var(--warn);box-shadow:0 0 8px rgba(245,158,11,.7)}
+.card{--mx:50%;--my:0px;position:relative;overflow:hidden;isolation:isolate;
+background-color:rgba(18,23,32,.55);
+background-image:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.012));
+-webkit-backdrop-filter:blur(18px) saturate(150%);backdrop-filter:blur(18px) saturate(150%);
+border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:22px 22px 20px;margin-bottom:18px;
+box-shadow:0 12px 32px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.07);
+transition:border-color .28s ease,box-shadow .28s ease}
+.card>*{position:relative;z-index:1}
+.card::after{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:inherit;
+background:radial-gradient(420px circle at var(--mx) var(--my),
+rgba(138,172,232,.085),rgba(138,172,232,.035) 45%,transparent 78%);
+opacity:0;transition:opacity .3s ease}
+.card:hover::after{opacity:1}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+.card{background-color:#141922}}
+.card:hover{border-color:#2e3a4f}
+.card h2{font-size:16.5px;margin:0 0 8px;display:flex;align-items:center;gap:9px;letter-spacing:.2px}
+.desc{color:#93a1ba;font-size:13.5px;margin-bottom:16px;line-height:1.8}
+.tag{font-size:11px;padding:2px 8px;border-radius:6px;background:rgba(76,141,255,.14);color:#8fb6ff}
+.tag.gray{background:rgba(255,255,255,.06);color:var(--sub)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.field label{display:block;font-size:12.8px;color:var(--sub);margin-bottom:7px;letter-spacing:.2px}
+.field .hint{font-size:12.3px;color:#78849c;margin-top:6px;line-height:1.7}
+input,textarea{width:100%;background:var(--card2);border:1px solid var(--line);color:var(--txt);
+border-radius:10px;padding:9px 12px;font:13.5px inherit;outline:none;transition:.18s}
+input:focus,textarea:focus{border-color:#3b6fd4;box-shadow:0 0 0 3px rgba(59,111,212,.15)}
+input::placeholder,textarea::placeholder{color:#5b6478}
+button{border:1px solid var(--line);background:var(--card2);color:var(--txt);border-radius:11px;
+padding:10px 17px;font:13.5px inherit;cursor:pointer;font-weight:500;
+transition:transform .16s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease}
+button:hover{background:#232c3c;border-color:#33405a;transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.30)}
+button:active{transform:translateY(0) scale(.985);box-shadow:none}
+button:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(76,141,255,.35)}
+button.primary{background:linear-gradient(180deg,#4a86f2,#2f6bdc);border-color:#3a74e0;color:#fff;box-shadow:0 6px 18px rgba(47,107,220,.30)}
+button.primary:hover{background:linear-gradient(180deg,#5b93fa,#3a78e8);border-color:#4a86f2}
+button.danger:hover{background:#2e1f26;border-color:#4a2f3a}
+button.danger{color:#ff8b8b;border-color:#3a2730;background:#241a1e}
+button.sm{padding:6px 12px;font-size:13px;border-radius:9px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.switch{position:relative;display:inline-block;width:46px;height:26px}
+.switch input{display:none}
+.slider{position:absolute;inset:0;background:#2a3242;border-radius:999px;transition:.22s;cursor:pointer}
+.slider::before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#8794ad;border-radius:50%;transition:.22s}
+.switch input:checked + .slider{background:#2f6bdc}
+.switch.warn input:checked + .slider{background:#f59e0b}
+.switch.warn input:checked + .slider::before{background:#fff}
+.legal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:6px 0 14px}
+.legal-block{background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.legal-h{font-size:13px;font-weight:700;color:#c9d6ea;margin-bottom:8px}
+.legal-block ul{margin:0;padding-left:18px;font-size:13px;line-height:2;color:#a6b6d0}
+.legal-no{margin-top:8px;font-size:13px;color:#e0a35c}
+.consent{display:flex;gap:10px;align-items:flex-start;background:rgba(47,107,220,.10);border:1px solid rgba(47,107,220,.35);border-radius:12px;padding:12px 14px;font-size:13px;color:#c9d6ea}
+.consent input{width:18px;height:18px;margin-top:1px;accent-color:#2f6bdc}
+.legal-law{font-size:13.5px;line-height:1.95;color:#9fb0cc}
+.switch input:checked + .slider::before{transform:translateX(20px);background:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--sub);font-weight:500;font-size:13px;padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:11px 10px;border-bottom:1px solid #1b222d}tr:last-child td{border-bottom:none}
+tbody tr{transition:background .15s}tbody tr:hover td{background:#171e2a}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12.5px}
+.badge.ok{background:rgba(34,197,94,.13);color:#4ade80}
+.badge.exp{background:rgba(239,68,68,.13);color:#f87171}
+.badge.gray{background:rgba(255,255,255,.06);color:var(--sub)}
+.empty{color:var(--sub);text-align:center;padding:22px 0;font-size:13px}
+.mono{font-family:"Cascadia Mono","JetBrains Mono",Consolas,"Microsoft YaHei",ui-monospace,monospace;
+font-variant-numeric:tabular-nums;letter-spacing:.2px}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-top:12px;background:rgba(255,255,255,.015)}
+details summary{cursor:pointer;color:#9fb0cc;font-size:12.8px;list-style:none;user-select:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"?";display:inline-flex;align-items:center;justify-content:center;
+width:18px;height:18px;margin-right:8px;vertical-align:-4px;border-radius:50%;
+background:rgba(76,141,255,.16);color:#8fb6ff;font-size:12px;line-height:1;font-weight:600}
+details[open] summary{margin-bottom:9px}
+details .body{color:var(--sub);font-size:12.8px;line-height:1.85}
+details .body b{color:#c9d6ea}
+details .body code{background:#0f141d;border:1px solid var(--line);padding:1px 6px;border-radius:5px;color:#8fb6ff;font-size:13px}
+.steps{list-style:none;padding:0;margin:0;display:grid;gap:10px;counter-reset:s}
+.steps li{display:flex;gap:11px;font-size:13px;color:var(--sub);counter-increment:s}
+.steps li::before{content:counter(s);flex:0 0 22px;height:22px;border-radius:50%;background:rgba(76,141,255,.16);
+color:#8fb6ff;display:grid;place-items:center;font-size:12.5px;font-weight:600}
+.steps li b{color:var(--txt)}
+.modal{position:fixed;inset:0;background:rgba(4,6,10,.78);backdrop-filter:blur(4px);display:none;place-items:center;padding:20px;z-index:50}
+.modal.on{display:grid}
+.dialog{width:min(560px,100%);background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;
+animation:rise .25s ease both;box-shadow:var(--glow)}
+.dialog h3{margin:0 0 4px;font-size:16px}
+.qrbox{display:grid;place-items:center;padding:14px;background:#fff;border-radius:12px;margin:12px 0}
+.qrbox img{width:260px;height:260px;display:block}
+.status{font-size:13px;color:var(--sub);margin-top:10px}.status.ok{color:#4ade80}
+.toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,16px);opacity:0;background:#222b3a;
+border:1px solid var(--line);color:var(--txt);padding:10px 18px;border-radius:10px;font-size:13px;
+transition:.24s;pointer-events:none;z-index:60}
+.toast.on{opacity:1;transform:translate(-50%,0)}.toast.err{border-color:#5a2630;background:#2a1a1e;color:#ffb4b4}
+.skeleton{height:120px;border-radius:14px;margin-bottom:16px;
+background:linear-gradient(90deg,#151a23 25%,#1b2230 37%,#151a23 63%);background-size:400% 100%;animation:shimmer 1.3s infinite}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+.card-head{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:9px;width:100%;
+cursor:pointer;padding:2px 0 10px;font:inherit;text-align:left}
+.card-head:focus-visible{outline:2px solid rgba(76,141,255,.5);outline-offset:6px;border-radius:10px}
+.pill{margin-left:auto;font-size:13px;color:#9fc0ff;border:1px solid rgba(96,144,235,.45);
+background:rgba(76,141,255,.12);border-radius:999px;padding:4px 14px;transition:.2s ease;white-space:nowrap}
+.card-head:hover,.card-head:active,.card-head:focus{
+background:transparent;border:0;box-shadow:none;transform:none}
+.card-head:hover .pill{background:rgba(76,141,255,.24);border-color:rgba(120,165,255,.7)}
+.card[data-open="1"] .pill{color:var(--sub);background:transparent;border-color:var(--line)}
+details.card{padding-top:14px}
+details.card>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px}
+details.card>summary::-webkit-details-marker{display:none}
+details.card>summary::after{content:"展开";margin-left:auto;font-size:13px;color:#9fc0ff;
+border:1px solid rgba(96,144,235,.45);background:rgba(76,141,255,.12);border-radius:999px;
+padding:4px 14px;transition:.2s ease;letter-spacing:.5px}
+details.card>summary:hover::after{background:rgba(76,141,255,.24);border-color:rgba(120,165,255,.7)}
+details.card[open]>summary::after{content:"收起";color:var(--sub);background:transparent;border-color:var(--line)}
+details.card>summary h2{margin:0}
+.card[data-accent="blue"]{border-left:3px solid #4676d8;
+background-image:linear-gradient(90deg,rgba(70,118,216,.16),transparent 42%),linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.012))}
+.card[data-accent="teal"]{border-left:3px solid #3aa79b;
+background-image:linear-gradient(90deg,rgba(58,167,155,.16),transparent 42%),linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.012))}
+.card[data-accent="violet"]{border-left:3px solid #8a6fd0;
+background-image:linear-gradient(90deg,rgba(138,111,208,.16),transparent 42%),linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.012))}
+.card[data-accent="amber"]{border-left:3px solid #c8963c;
+background-image:linear-gradient(90deg,rgba(200,150,60,.16),transparent 42%),linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.012))}
+.guard{padding:44px 0;text-align:center;color:var(--sub);line-height:1.9}
+.guard code{background:#1a2030;padding:2px 8px;border-radius:6px;color:#8fb6ff}
+@media(max-width:640px){.row{flex-direction:column;align-items:stretch}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>超星健康打卡</h1>
+  <div class="sub">每天自动提交健康日报，结果发到你指定的 QQ　<span style="opacity:.5">v29</span></div>
+  <div class="chips" id="chips"></div>
+
+  <div id="guard" class="guard" style="margin-top:24px">正在连接 AstrBot 面板…</div>
+  <div id="loading" style="display:none;margin-top:18px">
+    <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
+  </div>
+
+  <div id="main" style="display:none">
+
+    <div style="margin:18px 0 2px;font-size:13.5px;color:var(--sub);line-height:1.95">
+      <b style="color:#c9d6ea">第一次用，按这个顺序走：</b>
+      ① 读说明 → ③ 填设置 → ④ 开助手（只有云服务器需要）→ ⑥ 扫码加人 → ⑤ 自检通过<br>
+      日常只用 <b>⑥ 用户</b> 和 <b>⑤ 自检</b>；⑦⑧ 配一次就不用再动。带 ▾ 的可以点开/收起。
+    </div>
+
+
+    <div class="card" id="legalCard" style="margin-top:18px;border-color:rgba(90,140,220,.35)">
+      <h2>数据处理说明 <span class="tag">合规声明</span></h2>
+      <div class="desc">在你让本工具代提交健康日报之前，请先读完这一页。</div>
+
+      <div class="legal-grid">
+        <div class="legal-block">
+          <div class="legal-h">① 只收集两样东西</div>
+          <ul>
+            <li>你扫码后<b>超星下发的会话凭证</b>（Cookie）</li>
+            <li>每次提交的<b>结果</b>（成功/失败、时间）</li>
+          </ul>
+          <div class="legal-no">不收集：账号密码、姓名、学号、手机号、身份证号、聊天记录</div>
+        </div>
+
+        <div class="legal-block">
+          <div class="legal-h">② 为什么要它</div>
+          <ul>
+            <li>Cookie 是<b>代你提交表单的唯一凭证</b>，没有它无法完成打卡</li>
+            <li>表单参数（formId / uuid 等）用于定位<b>你所在学校</b>的那张日报表</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <div class="legal-h">③ 具体做什么（仅此三件）</div>
+          <ul>
+            <li>每天按设定时间，代你提交<b>一次</b>健康日报</li>
+            <li>把成功或失败的结果发到你指定的会话</li>
+            <li>失败时记录原因，方便下次修复</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <div class="legal-h">④ 绝不会做什么</div>
+          <ul>
+            <li>不读取与打卡无关的页面（成绩、课表、消息、作业）</li>
+            <li>不改动你的账号设置与密码</li>
+            <li>不转卖、不共享、不用于任何商业用途</li>
+            <li>不做画像、分析、推荐</li>
+            <li><b>不在日志里打印你的 Cookie</b></li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <div class="legal-h">⑤ 存多久</div>
+          <ul>
+            <li>Cookie：保存至<b>你主动删除</b>或服务停止</li>
+            <li>提交记录：保留 90 天，仅用于排查失败</li>
+          </ul>
+        </div>
+
+        <div class="legal-block">
+          <div class="legal-h">⑥ 你怎么随时收回</div>
+          <ul>
+            <li>取消下方勾选 → <b>立即停止处理</b></li>
+            <li>「用户」卡片点删除 → <b>Cookie 立刻从磁盘移除</b></li>
+            <li>两者都不需要找任何人申请</li>
+          </ul>
+        </div>
+      </div>
+
+      <label class="consent">
+        <input type="checkbox" id="consentBox">
+        <span>
+          我已阅读并同意上述说明
+          <b>（默认勾选，随时可以取消）</b>
+        </span>
+      </label>
+      <div class="hint" id="consentAt"> </div>
+
+      <details><summary>法律依据（原文摘录）</summary>
+        <div class="body legal-law">
+          <b>《中华人民共和国个人信息保护法》</b><br>
+          第 4 条：个人信息是以电子或者其他方式记录的与已识别或者可识别的自然人有关的各种信息。<br>
+          第 6 条：处理个人信息应当具有明确、合理的目的，并应当与处理目的直接相关，采取对个人权益影响最小的方式。收集个人信息，应当限于实现处理目的的最小范围。<br>
+          第 13 条：取得个人同意，可以处理个人信息。<br>
+          第 14 条：基于个人同意处理个人信息的，该同意应当由个人在充分知情的前提下自愿、明确作出。<br>
+          第 17 条：应当以显著方式、清晰易懂的语言真实、准确、完整地向个人告知处理目的、方式、种类、保存期限等。<br>
+          第 47 条：处理目的已实现、无法实现或者为实现处理目的不再必要的，个人信息处理者应当主动删除个人信息。<br>
+          第 51 条：应当采取相应的加密、去标识化等安全技术措施。<br><br>
+          <b>《中华人民共和国网络安全法》</b><br>
+          第 27 条：任何个人和组织不得从事非法侵入他人网络、干扰他人网络正常功能、窃取网络数据等危害网络安全的活动。<br><br>
+          <span style="opacity:.7">以上为法条摘录，用于说明本工具的处理边界，不构成法律意见。</span>
+        </div>
+      </details>
+
+      <div class="hint" style="margin-top:10px">
+        本工具为个人自用脚本，不提供商业服务；请确认使用方式符合你所在学校的规定。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>使用流程</h2>
+      <div class="desc">第一次用，照着四步走。</div>
+      <ul class="steps">
+        <li><b>开启动器</b>（只有 AstrBot 装在云服务器上才需要）：双击本机的启动脚本，这台电脑上是桌面的 <code>超星打卡.bat</code>。黑窗口留着别关，关了等于断线。</li>
+        <li><b>点「检测登录通道」</b>：在 ④ 登录助手 里点一下，🟢 才能扫码；🟡 说明窗口关了或没连上。</li>
+        <li><b>扫码绑定</b>：在 ⑥ 用户 里点「扫码添加用户」，填个名字，让本人用学习通扫。</li>
+        <li><b>等结果</b>：每天到点自动提交，成功或失败都会发到 ⑦ 里配的 QQ 会话。</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>运行设置</h2>
+      <div class="desc"><b>改完点保存，立即生效。</b></div>
+
+      <div style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:13.5px;color:var(--sub);margin-bottom:8px">
+          <b>表单链接</b>：<b>只有学校换了新表单时才用</b>。取链接的方法：
+          学习通 App →「已提交的记录」→ 点开那条日报 → 右上角「…」→ 分享 → 复制链接 → 粘到这里。<br>
+          四个参数会自动填好，平时不用管。
+        </div>
+        <div class="row">
+          <input id="formUrl" style="flex:1;min-width:280px" placeholder="https://office.chaoxing.com/apps/forms/mobile/detail.html?formId=...">
+          <button class="primary" id="btnApplyForm">解析并保存</button>
+        </div>
+        <div id="formUrlMsg" style="font-size:13px;color:var(--sub);margin-top:8px"></div>
+
+        <div class="row" style="margin-top:12px">
+          <input id="formSource" style="flex:1;min-width:300px" placeholder="远程链接（可选）：一个纯文本网址，内容是一行表单链接">
+          <input id="formSourceDays" style="width:96px" placeholder="30">
+          <button id="btnCheckSource">检查一次</button>
+        </div>
+        <div style="font-size:12.5px;color:var(--sub);margin-top:6px">
+          填了它，程序每 N 天自动读一次；链接变了就自动换参数，不需要改代码。
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>总开关</label>
+          <label class="switch"><input type="checkbox" id="optEnable"><span class="slider"></span></label>
+          <div class="hint">关掉后当天不再打卡。</div>
+        </div>
+        <div class="field">
+          <label>演练模式</label>
+          <label class="switch warn"><input type="checkbox" id="optDry"><span class="slider"></span></label>
+          <div class="hint"><b>不真的提交</b>，只验证登录。</div>
+        </div>
+        <div class="field">
+          <label>自动同步表单</label>
+          <label class="switch"><input type="checkbox" id="optSync"><span class="slider"></span></label>
+          <div class="hint">每次打卡前拉一次最新表单，模板变了自己跟上。</div>
+        </div>
+        <div class="field">
+          <label>允许陌生用户自助绑定</label>
+          <label class="switch warn"><input type="checkbox" id="optSelfBind"><span class="slider"></span></label>
+          <div class="hint">开启后，<b>任何能私聊这个 QQ 机器人的人</b>都能发 <code>/bind</code> 给自己绑账号；默认关闭，等于对外关门。</div>
+        </div>
+        <div class="field">
+          <label>每日开始时间</label>
+          <input id="optSchedule" placeholder="08:10">
+          <div class="hint">24 小时制，建议 08:05～08:30。</div>
+        </div>
+        <div class="field">
+          <label>学校租户 fid</label>
+          <input id="optFid" placeholder="填你学校的 fid">
+          <div class="hint">5 位数字，填错会跳 404。</div>
+        </div>
+        <div class="field">
+          <label>登录代理</label>
+          <input id="optProxy" placeholder="http://10.255.0.1:8899">
+          <div class="hint">只有用登录助手时才需要。</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px"><button class="primary" id="btnSaveOpts">保存设置</button></div>
+
+      <details><summary>演练模式是干什么的？</summary>
+        <div class="body">
+          正常打卡：① 拿表单 ② <b>真的提交</b>。演练只做 ①，<b>不产生任何打卡记录</b>。<br><br>
+          第一次配置时开一次，能跑通说明 Cookie 有效；<b>日常请关掉</b>，否则永远不真提交。
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>登录助手 <span class="tag gray" id="helperBindTag"></span></h2>
+      <div class="desc">这一段<b>只对「把 AstrBot 装在云服务器上」的人有用</b>。<br>
+        如果 AstrBot 就装在你自己这台电脑上，整段都不用看——扫码和打卡都能直连，不需要借网络。</div>
+      <div class="grid">
+        <div class="field">
+          <label>SSH 目标</label>
+          <input id="hSsh" placeholder="root@服务器公网IP">
+          <div class="hint">一般已自动填好。</div>
+        </div>
+        <div class="field"><label>代理端口</label><input id="hPort" placeholder="8898"></div>
+        <div class="field">
+          <label>空闲自动退出（秒）</label>
+          <input id="hIdle" placeholder="600">
+          <div class="hint">闲置这么久自动断开。</div>
+        </div>
+        <div class="field"><label>最长运行（秒）</label><input id="hMax" placeholder="3600"></div>
+        <div class="field"><label>服务器绑定地址</label><input id="hBind" placeholder="127.0.0.1"></div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="btnSaveHelper">保存参数</button>
+        <button id="btnDownload">下载助手配置</button>
+        <button id="btnCheck">检测登录通道</button>
+      </div>
+      <div class="status" id="channelStatus" style="margin-top:12px">通道状态：未检测</div>
+      <div class="field" style="margin-top:14px">
+        <label>助手公钥</label>
+        <textarea id="hPub" rows="2" placeholder="ssh-ed25519 AAAA..."></textarea>
+        <div class="hint">助手启动时会打印，粘贴后点提交。</div>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="primary" id="btnSavePub">提交公钥</button></div>
+
+      <details open><summary>用完怎么关？</summary>
+        <div class="body">
+          <b>关掉那个黑窗口就行</b>，隧道立即断开。<br>
+          另外两道保险：闲置 10 分钟自动退、最长 1 小时自动退。<br>
+          断没断，点「检测登录通道」看结果——变成 🟡 就是断了。
+        </div>
+      </details>
+
+      <details><summary>SSH 目标填什么？怎么找自己的服务器 IP</summary>
+        <div class="body">
+          格式：<b>用户名@公网IP</b>，例如 <code>root@1.2.3.4</code>。<br><br>
+          <b>阿里云</b>：控制台 → 轻量应用服务器 / ECS → 实例列表 → 「公网 IP」列。<br>
+          <b>腾讯云</b>：云服务器 CVM → 实例列表 → 「公网 IP」列。<br>
+          <b>华为云</b>：弹性云服务器 → 「弹性公网 IP」。<br>
+          <b>宝塔面板</b>：首页右上角直接显示。<br>
+          <b>装在自己电脑</b>：填 <code>127.0.0.1</code>，或不用助手。
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>自检 <span class="tag gray" id="checkAt"></span></h2>
+      <div class="desc">把配置、账号、留痕、通道、门卫一次性过一遍。<b>不会真的打卡</b>。</div>
+      <div class="row" style="margin-bottom:12px">
+        <button class="primary" id="btnSelfCheck">跑一次自检</button>
+        <span style="font-size:13px;color:var(--sub)">「登录通道」会真的走一次代理请求，最多 8 秒</span>
+      </div>
+      <div id="checkVerdict" class="row" style="gap:8px;margin-bottom:10px"></div>
+      <table id="checkTable" style="display:none">
+        <thead><tr><th style="width:140px">项目</th><th style="width:70px">结果</th><th>说明</th></tr></thead>
+        <tbody id="checkRows"></tbody>
+      </table>
+      <div id="gateWrap" style="display:none;margin-top:16px">
+        <div style="font-size:13px;font-weight:600;color:#c9d6ea;margin:6px 0 8px">门卫矩阵：谁 × 哪条命令</div>
+        <table><thead id="gateHead"></thead><tbody id="gateRows"></tbody></table>
+        <div class="hint" style="margin-top:8px">这张表由<b>真的判定函数</b>算出来，和机器人实际行为是同一份代码。</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>用户 <span class="tag gray" id="userCount">0 人</span></h2>
+      <div class="desc"><b>每人一个独立状态</b>，互不影响。</div>
+      <table>
+        <thead><tr><th>名字</th><th>UID</th><th>状态</th><th>参数</th><th>消息推送</th><th>归属 openid</th><th>最近成功</th><th style="width:130px"></th></tr></thead>
+        <tbody id="userRows"></tbody>
+      </table>
+      <div class="empty" id="userEmpty" style="display:none">还没有绑定任何用户</div>
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="btnQr">扫码添加用户</button>
+        <button id="btnManual">手动粘贴 Cookie</button>
+      </div>
+
+      <details><summary>扫完就完事了？Cookie 会过期吗</summary>
+        <div class="body">
+          扫一次能用几天到几周。过期后打卡会失败，插件会标记「已过期」并通知主账号，让他重新扫一次即可。
+        </div>
+      </details>
+
+      <details><summary>手动粘贴 Cookie 怎么操作</summary>
+        <div class="body">
+          ① 登录 <code>office.chaoxing.com</code>；② F12 → Network → 刷新；③ 点任意请求 → Headers → Request Headers 的 <code>Cookie:</code>；④ 复制整行；⑤ 回到这里粘贴。
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>权限与通知</h2>
+      <div class="desc">
+        这一块管三件事，<b>彼此独立</b>，都可以不配。<br>
+        <span style="color:var(--sub)">下面全部跟 <b>QQ 官方机器人</b>有关：谁能用它、结果推给谁。前提是你已经在 QQ 开放平台挂上了这个机器人。</span>
+      </div>
+
+      <div style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13.5px;line-height:1.95">
+        <b>① 能不能聊天</b> —— 由身份决定；陌生人说话直接被吞，不耗 token<br>
+        <b>② 能不能用指令</b> —— 由身份决定；成员还要看下面那个「全部权限」开关<br>
+        <b>③ 结果发给谁</b> —— <b>只看地址，跟权限无关</b>
+      </div>
+
+      <div style="background:rgba(110,160,255,.07);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13.5px;line-height:1.95">
+        <b>umo</b> ＝ 一段对话的地址（私聊一个、群里一个）<br>
+        <b>openid</b> ＝ 一个人的身份（换群还是他，跨会话有效）<br>
+        <b>两个名单都能填，判出来的权限完全一样</b> —— 不是 umo 权限低、openid 权限高。<br>
+        <span style="color:var(--sub)">唯一区别：发消息必须用 umo（地址）；认人用哪个都行。</span>
+      </div>
+
+      <div class="hint" style="margin-bottom:10px">
+        每个 ID 左边的「备注」框可以写名字（比如「我」「张三」），只影响显示，不影响权限。
+      </div>
+
+      <div style="font-size:13px;font-weight:600;color:#c9d6ea;margin:6px 0 4px">① 主账号（和你同权：能管人、能打卡、能解绑）</div>
+      <div style="font-size:13.5px;color:var(--sub);margin-bottom:10px">
+        名单里的人可以聊天、可以用全部指令。<b>注意</b>：这里决定的是「管理员」，不是「能不能聊天」。
+      </div>
+
+      <div style="font-size:13px;color:var(--sub);margin-bottom:6px">会话（UMO）—— 一次对话一个：私聊一个、群里一个</div>
+      <div id="adminList" style="display:grid;gap:8px;margin-bottom:10px"></div>
+      <div class="row">
+        <input id="adminInput" style="flex:1;min-width:240px" placeholder="qqbot:FriendMessage:...">
+        <button class="primary" id="btnAddAdmin">添加会话</button>
+      </div>
+
+      <div style="font-size:13px;color:var(--sub);margin:14px 0 6px">身份（openid）—— 一个人才一个，私聊和群里都算他</div>
+      <div id="idList" style="display:grid;gap:8px;margin-bottom:10px"></div>
+      <div class="row">
+        <input id="idInput" style="flex:1;min-width:240px" placeholder="32 位十六进制，例如 0123ABCD...">
+        <button class="primary" id="btnAddId">添加 openid</button>
+      </div>
+
+      <div style="font-size:13px;color:var(--sub);margin:14px 0 6px">懒得填？把 <code>/whoami</code> 的整段回复粘进来，自动识别</div>
+      <textarea id="idText" rows="3" placeholder="umo: qqbot:FriendMessage:...
+sender_id: E04B..."></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="btnParseId">解析并添加</button>
+        <span style="color:var(--sub);font-size:13px">同时写入会话和 openid 两个名单</span>
+      </div>
+
+      <div style="height:1px;background:var(--line);margin:20px 0"></div>
+
+      <div style="font-size:13px;font-weight:600;color:#c9d6ea;margin:16px 0 4px">② 成员（按下面的开关决定权限）</div>
+      <div style="font-size:13.5px;color:var(--sub);margin-bottom:10px">
+        <b>开关关着</b>：能聊天 + 只有 3 条只读指令（<code>/status</code> <code>/whoami</code> <code>/checkin_bind</code>）<br>
+        <b>开关打开</b>：和主账号同权，连解绑、手动打卡都能做
+      </div>
+      <div id="memberList" style="display:grid;gap:8px;margin-bottom:10px"></div>
+      <div class="row">
+        <input id="memberInput" style="flex:1;min-width:240px" placeholder="openid（32 位十六进制）或 qqbot:FriendMessage:...">
+        <button class="primary" id="btnAddMember">添加成员</button>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <label class="switch warn"><input type="checkbox" id="optMemberAll"><span class="slider"></span></label>
+        <span style="font-size:13.5px;color:var(--sub)">成员拥有全部权限（关掉 = 只能聊天，命令一律不执行）</span>
+      </div>
+
+      <div style="height:1px;background:var(--line);margin:20px 0"></div>
+
+      <div style="font-size:13px;font-weight:600;color:#c9d6ea;margin:6px 0 4px">③ 结果发给谁</div>
+      <div style="font-size:13.5px;color:var(--sub);margin-bottom:10px">
+        每天打完卡，发一条「今天 3/3 成功」到这些会话。<b>不填也能打卡</b>，只是不主动发消息。<br>
+        这里只填<b>地址</b>，不影响谁能聊天、谁能用指令。
+      </div>
+      <div id="summaryList" style="display:grid;gap:8px;margin-bottom:10px"></div>
+      <div class="row">
+        <input id="summaryInput" style="flex:1;min-width:240px" placeholder="qqbot:FriendMessage:...">
+        <button class="primary" id="btnAddSummary">添加推送会话</button>
+      </div>
+
+      <details><summary>会话和 openid 有什么区别？</summary>
+        <div class="body">
+          <b>会话（UMO）</b>＝一段对话的地址。私聊是一个地址，群里 @ 它又是另一个。<br>
+          <b>openid</b>＝你这个人。不管在哪，都是同一个。<br><br>
+          判断"是不是你"用 openid 最准；发消息必须用 umo。
+        </div>
+      </details>
+
+      <details><summary>推送需要什么前提</summary>
+        <div class="body">
+          唯一前提：<b>机器人能向那个会话发消息</b>。QQ 官方机器人不能主动找陌生人，所以对方必须先跟它说过话。<br>
+          拿到会话地址的方法：让对方私聊机器人发 <code>/checkin_bind</code>。
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>操作留痕 <span class="tag gray" id="auditCount">0 条</span></h2>
+      <div class="desc">同意、改配置、增删用户、手动打卡都会记一行，落在插件数据目录的 <code>audit.jsonl</code>（0600 权限）。</div>
+      <div class="row" style="margin-bottom:10px">
+        <label class="switch"><input type="checkbox" id="optAudit"><span class="slider"></span></label>
+        <span style="font-size:13.5px;color:var(--sub)">记录留痕（关掉后不再写文件，已写的保留）</span>
+      </div>
+      <table>
+        <thead><tr><th style="width:150px">时间</th><th style="width:140px">动作</th><th style="width:70px">结果</th><th>对象 / 说明</th></tr></thead>
+        <tbody id="auditRows"></tbody>
+      </table>
+      <div class="empty" id="auditEmpty" style="display:none">还没有记录</div>
+      <div class="row" style="margin-top:12px">
+        <button id="btnAuditMore">刷新</button>
+        <span style="font-size:13px;color:var(--sub)">默认显示最近 15 条</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="modal" id="qrModal">
+  <div class="dialog">
+    <h3>扫码添加用户</h3>
+    <div class="desc">填一个名字，生成二维码后让本人用学习通 App 扫。</div>
+    <div class="field"><label>名字（只用于你辨认）</label><input id="qrName" placeholder="例如 张三"></div>
+    <div class="row" style="margin-top:12px">
+      <button class="primary" id="btnQrStart">生成二维码</button>
+      <button id="btnQrClose">关闭</button>
+    </div>
+    <div id="qrStage" style="display:none">
+      <div class="qrbox"><img id="qrImg" alt="二维码" onerror="this.style.display='none';document.getElementById('qrStatus').textContent='二维码图片没拿到，请点「生成二维码」重试';"></div>
+      <div class="status" id="qrStatus">等待扫码…</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="manualModal">
+  <div class="dialog">
+    <h3>手动添加用户</h3>
+    <div class="desc">F12 → Network → 任意请求 → Headers → 复制 Cookie 整行。</div>
+    <div class="field"><label>名字</label><input id="mName" placeholder="例如 李四"></div>
+    <div class="field"><label>Cookie</label><textarea id="mCookie" rows="4" placeholder="uf=…; _uid=…; fid=…"></textarea></div>
+    <div class="row" style="justify-content:flex-end">
+      <button id="btnManualCancel">取消</button>
+      <button class="primary" id="btnManualSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "settings";
+let state = {admins:[], users:[], summary_umos:[], hints:[]};
+let qrTimer = null;
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function toast(msg, err){
+  const t = el("toast");
+  t.textContent = msg; t.className = "toast on" + (err ? " err" : "");
+  clearTimeout(t._t); t._t = setTimeout(() => t.className = "toast", 2800);
+}
+function getBridge(){ return window.AstrBotPluginView || window.AstrBotPluginPage || null; }
+function waitForBridge(ms){
+  return new Promise(resolve => {
+    const started = Date.now();
+    (function tick(){
+      const b = getBridge();
+      if(b) return resolve(b);
+      if(Date.now() - started > ms) return resolve(null);
+      setTimeout(tick, 120);
+    })();
+  });
+}
+function deepPick(obj, keys, depth){
+  depth = depth || 0;
+  if(!obj || typeof obj !== "object" || depth > 4) return null;
+  for(const k of keys){ if(obj[k] !== undefined && obj[k] !== null) return obj; }
+  for(const v of Object.values(obj)){
+    const hit = deepPick(v, keys, depth + 1);
+    if(hit) return hit;
+  }
+  return null;
+}
+async function call(method, body){
+  const bridge = getBridge();
+  if(!bridge) throw new Error("面板桥接未就绪");
+  const res = method === "GET" ? await bridge.apiGet(API) : await bridge.apiPost(API, body);
+  const payload = (res && res.data && res.status) ? res : (res || {});
+  if(payload.status === "error") throw new Error(payload.message || "请求失败");
+  return payload;
+}
+function renderSummary(){
+  const box = el("summaryList");
+  if(!box) return;
+  const list = state.summary_umos || [];
+  box.innerHTML = list.length
+    ? list.map(u => '<div class="row" style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 12px">' +
+        contactInput(u) +
+        '<code class="mono" style="flex:1;font-size:13.5px;color:#a8b7d4;word-break:break-all">' + esc(u) + '</code>' +
+        '<button class="danger sm" data-del-summary="' + esc(u) + '">移除</button></div>').join("")
+    : '<div class="empty">还没有推送会话（不填也能正常打卡）</div>';
+}
+function renderAudit(rows){
+  const body = el("auditRows");
+  if(!body) return;
+  rows = rows || [];
+  body.innerHTML = rows.map(r =>
+    '<tr><td class="mono" style="font-size:13px">' + esc(r.ts) + '</td>' +
+    '<td style="font-size:13px">' + esc(r.action) + '</td>' +
+    '<td>' + (r.ok === false ? '<span class="badge exp">失败</span>' : '<span class="badge ok">成功</span>') + '</td>' +
+    '<td style="font-size:13px;color:var(--sub)">' + esc([r.target, r.detail].filter(Boolean).join(" · ")) + '</td></tr>'
+  ).join("");
+  el("auditEmpty").style.display = rows.length ? "none" : "block";
+}
+function levelBadge(level){
+  if(level === "error") return '<span class="badge exp">异常</span>';
+  if(level === "warn") return '<span class="badge gray">注意</span>';
+  return '<span class="badge ok">正常</span>';
+}
+function renderSelfCheck(d){
+  d = d || {};
+  const v = d.verdict || {};
+  if(el("checkAt")) el("checkAt").textContent = d.at || "";
+  el("checkVerdict").innerHTML =
+    '<span class="chip"><span class="dot ' + ((v.error || 0) > 0 ? "off" : "") + '"></span>异常 <b>' + (v.error || 0) + '</b></span>' +
+    '<span class="chip"><span class="dot warn"></span>注意 <b>' + (v.warn || 0) + '</b></span>' +
+    '<span class="chip"><span class="dot"></span>正常 <b>' + (v.ok || 0) + '</b></span>';
+  const rows = d.checks || [];
+  el("checkTable").style.display = rows.length ? "table" : "none";
+  el("checkRows").innerHTML = rows.map(c =>
+    '<tr><td>' + esc(c.name) + '</td><td>' + levelBadge(c.level) + '</td>' +
+    '<td style="font-size:13.5px;color:var(--sub)">' + esc(c.detail) + '</td></tr>'
+  ).join("");
+  const g = d.gate || {};
+  if(g.rows && g.commands){
+    el("gateWrap").style.display = "block";
+    el("gateHead").innerHTML = '<tr><th style="width:130px">身份</th>' +
+      g.commands.map(c => '<th class="mono" style="font-size:13px">' + esc(c) + '</th>').join("") + '</tr>';
+    el("gateRows").innerHTML = g.rows.map(r =>
+      '<tr><td style="font-size:13px">' + esc(r.who) + '</td>' +
+      r.cells.map(c => '<td>' + (c.allow ? '<span class="badge ok">放行</span>' : '<span class="badge exp">拦下</span>') + '</td>').join("") +
+      '</tr>').join("");
+  } else {
+    el("gateWrap").style.display = "none";
+  }
+}
+async function runSelfCheck(){
+  const btn = el("btnSelfCheck");
+  btn.disabled = true;
+  el("checkVerdict").innerHTML = '<span class="chip">检测中…</span>';
+  try{
+    const res = await call("POST", {action:"self_check"});
+    const d = deepPick(res, ["checks"]) || {};
+    renderSelfCheck(d);
+    toast("自检完成");
+  }catch(e){
+    el("checkVerdict").innerHTML = "";
+    toast(e.message || "自检失败", true);
+  }finally{
+    btn.disabled = false;
+  }
+}
+function renderChips(){
+  const on = state.enable !== false;
+  el("chips").innerHTML = [
+    '<span class="chip"><span class="dot ' + (on?"":"off") + '"></span>总开关 <b>' + (on?"开":"关") + '</b></span>',
+    '<span class="chip"><span class="dot ' + (state.dry_run?"warn":"") + '"></span>演练 <b>' + (state.dry_run?"开":"关") + '</b></span>',
+    '<span class="chip">开始时间 <b>' + esc(state.schedule || "08:10") + '</b></span>',
+    '<span class="chip">用户 <b>' + (state.users ? state.users.length : 0) + '</b></span>',
+    '<span class="chip">登录 fid <b>' + esc(state.qr_fid || "-") + '</b></span>'
+  ].join("");
+}
+function contactInput(key){
+  const v = (state.contacts && state.contacts[key]) || "";
+  return '<input data-contact-key="' + esc(key) + '" value="' + esc(v) +
+    '" placeholder="备注" style="width:104px;flex:none;font-size:12.5px;padding:6px 8px">';
+}
+function render(){
+  el("optEnable").checked = state.enable !== false;
+  el("optDry").checked = !!state.dry_run;
+  el("optSync").checked = state.auto_sync !== false;
+  const cb = el("consentBox");
+  if(cb) cb.checked = state.consent !== false;
+  const ca = el("consentAt");
+  if(ca) ca.textContent = state.consent_at
+    ? ("同意时间：" + state.consent_at + (state.consent_source === "backfill" ? "（补记，非本人勾选）" : ""))
+    : "";
+  if(el("optSelfBind")) el("optSelfBind").checked = !!state.allow_self_bind;
+  if(el("optAudit")) el("optAudit").checked = state.audit_enabled !== false;
+  if(el("optMemberAll")) el("optMemberAll").checked = state.member_all !== false;
+  const mbox = el("memberList");
+  if(mbox){
+    const ms = state.members || [];
+    mbox.innerHTML = ms.length
+      ? ms.map(m => '<div class="row" style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 12px">' +
+          contactInput(m) +
+          '<code class="mono" style="flex:1;font-size:13.5px;color:#a8b7d4;word-break:break-all">' + esc(m) + '</code>' +
+          '<button class="danger sm" data-del-member="' + esc(m) + '">移除</button></div>').join("")
+      : '<div class="empty">还没有成员（只有主账号能聊天）</div>';
+  }
+  renderAudit(state.audit || []);
+  if(el("auditCount")) el("auditCount").textContent = (state.audit_count || 0) + " 条";
+  if(el("formSource")) el("formSource").value = state.form_url_source || "";
+  if(el("formSourceDays")) el("formSourceDays").value = (state.form_url_days === 0) ? 0 : (state.form_url_days || 30);
+  el("optSchedule").value = state.schedule || "";
+  el("optFid").value = state.qr_fid || "";
+  el("optProxy").value = state.login_proxy || "";
+  const h = state.helper || {};
+  el("hSsh").value = h.ssh || el("hSsh").value || "";
+  el("hPort").value = h.port || 8898;
+  el("hIdle").value = (h.idle_exit === 0) ? 0 : (h.idle_exit || 180);
+  el("hMax").value = (h.max_life === 0) ? 0 : (h.max_life || 1800);
+  el("hBind").value = h.bind || "";
+  el("helperBindTag").textContent = h.detected_bind ? ("网桥 " + h.detected_bind) : "";
+  if(!el("hSsh").value){
+    const host = location.hostname;
+    if(host && host !== "127.0.0.1" && host !== "localhost" &&
+       !/^(10|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(host)){
+      el("hSsh").value = "root@" + host;
+    }
+  }
+  const idBox = el("idList");
+  if(idBox){
+    const ids = state.admin_ids || [];
+    idBox.innerHTML = ids.length
+      ? ids.map(u => '<div class="row" style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 12px">' +
+          contactInput(u) +
+          '<code class="mono" style="flex:1;font-size:13.5px;color:#a8b7d4;word-break:break-all">openid ' + esc(u) + '</code>' +
+          '<button class="danger sm" data-del-id="' + esc(u) + '">移除</button></div>').join("")
+      : '<div class="empty">还没有 openid 白名单</div>';
+  }
+  el("adminList").innerHTML = (state.admins && state.admins.length)
+    ? state.admins.map(u => '<div class="row" style="background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 12px">' +
+        contactInput(u) +
+        '<code class="mono" style="flex:1;font-size:13.5px;color:#a8b7d4;word-break:break-all">' + esc(u) + '</code>' +
+        '<button class="danger sm" data-del-admin="' + esc(u) + '">移除</button></div>').join("")
+    : '<div class="empty">还没有主账号，任何人都能使用全部命令</div>';
+  el("userCount").textContent = (state.users ? state.users.length : 0) + " 人";
+  el("userEmpty").style.display = (state.users && state.users.length) ? "none" : "block";
+  el("userRows").innerHTML = (state.users || []).map(u => {
+    const ok = u.status !== "expired";
+    const notify = u.notify ? '<span class="badge ok">私聊</span>' : '<span class="badge gray">汇总</span>';
+    const stage = u.last_stage || "";
+    const syncBadge = stage.indexOf("auto") >= 0
+      ? '<span class="badge ok">自动</span>'
+      : (u.last_success ? '<span class="badge gray">配置</span>' : '<span class="badge gray">-</span>');
+    return '<tr><td>' + esc(u.name) + '</td><td class="mono">' + esc(u.uid || "-") + '</td>' +
+      '<td><span class="badge ' + (ok ? "ok" : "exp") + '">' + (ok ? "正常" : "已过期") + '</span>' +
+        ((u.last_health && u.last_health.status && u.last_health.status !== "ok")
+          ? '<div style="font-size:11px;color:#e08a8a;margin-top:3px">' + esc(u.last_health.status) + '</div>' : '') + '</td>' +
+      '<td>' + syncBadge + '</td>' +
+      '<td>' + notify + '</td>' +
+      '<td><input data-owner-key="' + esc(u.key) + '" value="' + esc(u.owner || "") +
+        '" placeholder="留空=谁都查不到" style="width:118px;font-size:12.5px;padding:4px 6px"></td>' +
+      '<td class="mono">' + esc(u.last_success || "-") + '</td>' +
+      '<td><button class="sm" data-health-user="' + esc(u.key) + '">体检</button>' +
+      '<button class="sm" data-try-user="' + esc(u.key) + '" style="margin-left:4px">试跑</button>' +
+      '<button class="sm" data-run-user="' + esc(u.key) + '" style="margin-left:4px">立即</button>' +
+      '<button class="danger sm" data-del-user="' + esc(u.key) + '" style="margin-left:4px">撤回</button></td></tr>';
+  }).join("");
+  renderSummary();
+  renderChips();
+}
+async function load(){
+  const res = await call("GET");
+  const d = res.data || res;
+  state = Object.assign(state, d || {});
+  el("guard").style.display = "none";
+  el("loading").style.display = "none";
+  el("main").style.display = "block";
+  render();
+}
+async function act(body, okMsg){
+  const res = await call("POST", body);
+  await load();
+  toast(okMsg || (res && res.message) || "已保存");
+}
+el("consentBox").onchange = (e) => {
+  const on = e.target.checked;
+  act({action:"set_consent", consent:on}, on ? "已记录同意" : "已取消同意，停止处理")
+    .catch(err => toast(err.message, true));
+};
+el("btnCheckSource").onclick = async () => {
+  const src = el("formSource").value.trim();
+  if(!src){ return toast("先在输入框里填远程链接地址", true); }
+  try{
+    await act({action:"set_options", form_url_source: src,
+               form_url_days: el("formSourceDays").value.trim()}, "已保存远程链接");
+    const res = await call("POST", {action:"check_form_source"});
+    const d = deepPick(res, ["last_url", "changed"]) || {};
+    toast(d.last_url ? ("读到了：" + String(d.last_url).slice(0, 60)) : "没读到链接");
+    await load();
+  }catch(e){ toast(e.message || "检查失败", true); }
+};
+el("btnApplyForm").onclick = async () => {
+  const url = el("formUrl").value.trim();
+  if(!url) return toast("先粘贴表单链接", true);
+  const msg = el("formUrlMsg");
+  msg.textContent = "解析中…";
+  try{
+    const res = await call("POST", {action:"apply_form_url", url});
+    const d = deepPick(res, ["changed"]) || {};
+    const ch = d.changed || {};
+    msg.innerHTML = "已更新：" + Object.keys(ch).map(k => k + " = " + esc(ch[k])).join("　");
+    toast("表单参数已更新");
+    await load();
+  }catch(e){
+    msg.textContent = "";
+    toast(e.message || "解析失败", true);
+  }
+};
+el("btnSaveOpts").onclick = () => act({
+  action: "set_options",
+  enable: el("optEnable").checked,
+  dry_run: el("optDry").checked,
+  auto_sync: el("optSync").checked,
+  allow_self_bind: el("optSelfBind").checked,
+  form_url_source: el("formSource").value.trim(),
+  form_url_days: el("formSourceDays").value.trim(),
+  schedule: el("optSchedule").value.trim(),
+  qr_fid: el("optFid").value.trim(),
+  login_proxy: el("optProxy").value.trim()
+}, "设置已保存").catch(e => toast(e.message, true));
+el("btnSaveHelper").onclick = () => act({
+  action: "set_options",
+  helper_ssh: el("hSsh").value.trim(),
+  helper_port: el("hPort").value.trim(),
+  helper_idle: el("hIdle").value.trim(),
+  helper_max: el("hMax").value.trim(),
+  helper_bind: el("hBind").value.trim()
+}, "助手参数已保存").catch(e => toast(e.message, true));
+el("btnDownload").onclick = () => {
+  const h = state.helper || {};
+  const conf = {
+    server: el("hSsh").value.trim() || h.ssh || "",
+    port: parseInt(el("hPort").value || h.port || 8898, 10),
+    bind: el("hBind").value.trim() || h.bind || "",
+    allow: "chaoxing.com,cxstar.com,xuexixing.com",
+    idle_exit: parseInt(el("hIdle").value || h.idle_exit || 180, 10),
+    max_life: parseInt(el("hMax").value || h.max_life || 1800, 10)
+  };
+  const blob = new Blob([JSON.stringify(conf, null, 2)], {type: "application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "helper.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast("配置已下载，放到助手同级目录");
+};
+async function probe(showBusy){
+  const box = el("channelStatus");
+  if(showBusy) box.textContent = "检测中…";
+  try{
+    let d = {};
+    for(let i = 1; i <= 4; i++){
+      if(showBusy && i > 1) box.textContent = "检测中…（第 " + i + " 次）";
+      const p = await call("POST", {action:"probe_channel"});
+      d = deepPick(p, ["direct", "proxy"]) || {};
+      if(!d.direct && !d.proxy && i === 4){
+        box.innerHTML = "🟡 <b>助手未连接</b>（原始返回：" +
+          esc(JSON.stringify(p).slice(0, 200)) + "）";
+        return false;
+      }
+      if(d.direct || d.proxy) break;
+      if(i < 4) await new Promise(r => setTimeout(r, 2500));
+    }
+    if(d.direct){ box.innerHTML = "🟢 <b>直连可用</b> —— 不需要助手，直接扫码"; return true; }
+    if(d.proxy){ box.innerHTML = "🟢 <b>助手在线</b> —— 可以扫码了"; return true; }
+    box.innerHTML = "🟡 <b>助手未连接</b>，按顺序检查：<br>" +
+      '<span style="opacity:.6;font-size:13px">服务端返回：' + JSON.stringify(d) + "</span><br>" +
+      "1. 助手的黑窗口还开着吗？（关了就等于断开）<br>" +
+      "2. 窗口里有没有 <code>Error: remote port forwarding failed</code>？有就把其他黑窗口全关掉再开一次<br>" +
+      "3. 上面「助手公钥」提交过吗？提交后要等 3 秒才生效<br>" +
+      "4. 都做了还不行 → 点「检测登录通道」再试一次";
+    return false;
+  }catch(e){ box.textContent = "检测失败：" + e.message; return false; }
+}
+el("btnCheck").onclick = () => probe(true);
+el("btnSelfCheck").onclick = () => runSelfCheck();
+el("btnAddMember").onclick = () => {
+  const v = el("memberInput").value.trim();
+  if(!v) return toast("请先填 openid 或会话标识", true);
+  act({action:"add_member", member:v}, "已加入成员")
+    .then(() => { el("memberInput").value = ""; }).catch(e => toast(e.message, true));
+};
+el("memberList").onclick = e => {
+  const v = e.target.getAttribute("data-del-member");
+  if(v) act({action:"remove_member", member:v}, "已移出成员").catch(err => toast(err.message, true));
+};
+el("optMemberAll").onchange = (e) => {
+  const on = e.target.checked;
+  act({action:"set_options", member_all: on}, on ? "成员拥有全部权限" : "成员只能聊天")
+    .catch(err => { toast(err.message, true); e.target.checked = !on; });
+};
+el("optAudit").onchange = (e) => {
+  const on = e.target.checked;
+  act({action:"set_options", audit_enabled: on}, on ? "已开始记录留痕" : "已停止记录留痕")
+    .catch(err => { toast(err.message, true); e.target.checked = !on; });
+};
+el("btnAuditMore").onclick = async () => {
+  try{
+    const res = await call("POST", {action:"audit_tail", limit:30});
+    const d = deepPick(res, ["rows"]) || {};
+    renderAudit(d.rows || []);
+    if(el("auditCount")) el("auditCount").textContent = (d.count || 0) + " 条";
+    toast("已刷新");
+  }catch(e){ toast(e.message, true); }
+};
+el("btnSavePub").onclick = () => {
+  const key = el("hPub").value.trim().split("\n")[0].trim();
+  if(!key) return toast("请先粘贴公钥", true);
+  act({action:"set_public_key", key}, "公钥已提交").then(() => {
+    el("hPub").value = "";
+    el("channelStatus").textContent = "公钥已提交，3 秒后自动检测…";
+    setTimeout(() => probe(true), 3000);
+    setTimeout(() => probe(false), 9000);
+  }).catch(e => toast(e.message, true));
+};
+document.addEventListener("change", function(e){
+  const key = e.target && e.target.getAttribute && e.target.getAttribute("data-contact-key");
+  if(!key) return;
+  const name = e.target.value.trim();
+  call("POST", {action:"set_contact", key:key, name:name}).then(() => {
+    state.contacts = state.contacts || {};
+    if(name) state.contacts[key] = name; else delete state.contacts[key];
+    toast(name ? "备注已保存" : "备注已清除");
+  }).catch(err => toast(err.message, true));
+});
+el("btnAddAdmin").onclick = () => {
+  const v = el("adminInput").value.trim();
+  if(!v) return toast("请先粘贴会话标识", true);
+  act({action:"add_admin", umo:v}, "已添加主账号").then(() => { el("adminInput").value = ""; }).catch(e => toast(e.message, true));
+};
+el("btnParseId").onclick = () => {
+  const text = el("idText").value.trim();
+  if(!text) return toast("请先粘贴 /whoami 的输出", true);
+  act({action:"parse_identity", text}, "已解析并添加").then(() => { el("idText").value = ""; }).catch(e => toast(e.message, true));
+};
+el("btnAddId").onclick = () => {
+  const v = el("idInput").value.trim();
+  if(!v) return toast("请先填 openid", true);
+  act({action:"add_admin_id", id:v}, "已添加 openid").then(() => { el("idInput").value = ""; }).catch(e => toast(e.message, true));
+};
+el("idList").onclick = e => {
+  const v = e.target.getAttribute("data-del-id");
+  if(v) act({action:"remove_admin_id", id:v}, "已移除").catch(err => toast(err.message, true));
+};
+el("adminList").onclick = e => {
+  const u = e.target.getAttribute("data-del-admin");
+  if(u) act({action:"remove_admin", umo:u}, "已移除").catch(err => toast(err.message, true));
+};
+el("userRows").onclick = async e => {
+  const k = e.target.getAttribute("data-del-user");
+  if(k){
+    if(!confirm("撤回同意会删除这个账号和它的打卡状态，且不可恢复。确定？")) return;
+    act({action:"remove_user", key:k}, "已撤回并清理").catch(err => toast(err.message, true));
+    return;
+  }
+  const h = e.target.getAttribute("data-health-user");
+  if(h){
+    const btn = e.target;
+    const old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "体检中";
+    try{
+      const res = await call("POST", {action:"health_check", key:h});
+      const d = deepPick(res, ["status", "message"]) || {};
+      const ok = d.status === "ok";
+      toast((ok ? "正常：" : "异常：") + (d.message || ""), !ok);
+    }catch(err){
+      toast(err.message || "体检失败", true);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+    await load();
+    return;
+  }
+  const rn = e.target.getAttribute("data-run-user");
+  if(rn){
+    if(!confirm("立即打卡会真的提交一次，确定？")) return;
+    const btn = e.target;
+    const old = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = "执行中";
+    try{
+      const res = await call("POST", {action:"run_now", key:rn});
+      const d = deepPick(res, ["status", "message"]) || {};
+      toast((d.status === "ok" ? "完成：" : "结果：" + d.status + " ") + (d.message || ""), d.status !== "ok");
+    }catch(err){
+      toast(err.message || "执行失败", true);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = old;
+    }
+    await load();
+    return;
+  }
+  const t = e.target.getAttribute("data-try-user");
+  if(!t) return;
+  const btn = e.target;
+  const old = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "试跑中";
+  try{
+    const res = await call("POST", {action:"dry_run", key:t});
+    const d = deepPick(res, ["ok", "message"]) || {};
+    toast((d.ok ? "通过：" : "失败：") + (d.message || "完成"), !d.ok);
+  }catch(err){
+    toast(err.message || "试跑失败", true);
+  }finally{
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+  await load();
+};
+el("userRows").onchange = e => {
+  const key = e.target.getAttribute("data-owner-key");
+  if(!key) return;
+  act({action:"set_owner", key:key, owner:e.target.value.trim()}, "归属已保存")
+    .catch(err => toast(err.message, true));
+};
+el("btnAddSummary").onclick = () => {
+  const v = el("summaryInput").value.trim();
+  if(!v) return toast("请先粘贴会话标识", true);
+  act({action:"add_summary", umo:v}, "已添加推送会话").then(() => { el("summaryInput").value = ""; }).catch(e => toast(e.message, true));
+};
+el("summaryList").onclick = e => {
+  const u = e.target.getAttribute("data-del-summary");
+  if(u) act({action:"remove_summary", umo:u}, "已移除").catch(err => toast(err.message, true));
+};
+el("btnQr").onclick = () => { el("qrModal").classList.add("on"); el("qrStage").style.display = "none"; };
+el("btnQrClose").onclick = () => { el("qrModal").classList.remove("on"); if(qrTimer) clearInterval(qrTimer); };
+el("btnQrStart").onclick = async () => {
+  const name = el("qrName").value.trim();
+  if(!name) return toast("请先填名字", true);
+  try{
+    const res = await call("POST", {action:"qr_start", name});
+    const hit = deepPick(res, ["image"]);
+    const img = hit ? hit.image : "";
+    el("qrImg").src = "data:image/jpeg;base64," + img;
+    el("qrStage").style.display = "block";
+    el("qrStatus").className = "status";
+    el("qrStatus").textContent = "等待扫码…（有效期约 2 分钟）";
+    if(qrTimer) clearInterval(qrTimer);
+    qrTimer = setInterval(async () => {
+      try{
+        const p = await call("POST", {action:"qr_poll", name});
+        const hit2 = deepPick(p, ["state"]);
+        const s = hit2 ? hit2.state : "";
+        const map = {waiting:"等待扫码…", scanned:"已扫码，请在手机上确认", expired:"二维码已过期，请重新生成"};
+        el("qrStatus").textContent = map[s] || s;
+        if(s === "confirmed"){
+          el("qrStatus").className = "status ok";
+          el("qrStatus").textContent = "✅ 绑定成功：" + name;
+          clearInterval(qrTimer);
+          await load();
+        }
+      }catch(e){}
+    }, 2000);
+  }catch(e){ toast(e.message, true); }
+};
+el("btnManual").onclick = () => el("manualModal").classList.add("on");
+el("btnManualCancel").onclick = () => el("manualModal").classList.remove("on");
+el("btnManualSave").onclick = () => {
+  const name = el("mName").value.trim();
+  const cookie = el("mCookie").value.trim();
+  if(!name) return toast("名字不能为空", true);
+  if(!cookie) return toast("Cookie 不能为空", true);
+  act({action:"add_user", name, cookie}, "已添加用户").then(() => {
+    el("manualModal").classList.remove("on");
+    el("mName").value = ""; el("mCookie").value = "";
+  }).catch(e => toast(e.message, true));
+};
+// 把每张卡片变成可折叠的 <details>，并按顺序编号、配色
+function setupCollapsible(){
+  const CONF = [
+    {n:"①", accent:"blue",   open:true },
+    {n:"②", accent:"teal",   open:true },
+    {n:"③", accent:"blue",   open:true },
+    {n:"④", accent:"teal",   open:false},
+    {n:"⑤", accent:"violet", open:true },
+    {n:"⑥", accent:"blue",   open:true },
+    {n:"⑦", accent:"violet", open:false},
+    {n:"⑧", accent:"amber",  open:false},
+  ];
+  const cards = Array.from(document.querySelectorAll("#main > .card"));
+  cards.forEach((card, i) => {
+    const conf = CONF[i] || {};
+    const h2 = card.querySelector("h2");
+    if(!h2) return;
+    h2.insertBefore(document.createTextNode((conf.n || "") + " "), h2.firstChild);
+    const det = document.createElement("section");
+    det.className = card.className;
+    if(card.id) det.id = card.id;
+    const style = card.getAttribute("style");
+    if(style) det.setAttribute("style", style);
+    det.setAttribute("data-accent", conf.accent || "blue");
+    det.setAttribute("data-open", conf.open ? "1" : "0");
+
+    const head = document.createElement("button");
+    head.type = "button";
+    head.className = "card-head";
+    head.appendChild(h2);
+    const pill = document.createElement("span");
+    pill.className = "pill";
+    pill.textContent = conf.open ? "收起" : "展开";
+    head.appendChild(pill);
+    det.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "card-body";
+    const inner = document.createElement("div");
+    inner.className = "card-inner";
+    while(card.firstChild) inner.appendChild(card.firstChild);
+    body.appendChild(inner);
+    det.appendChild(body);
+
+    head.addEventListener("click", () => {
+      const isOpen = det.getAttribute("data-open") === "1";
+      det.setAttribute("data-open", isOpen ? "0" : "1");
+      pill.textContent = isOpen ? "展开" : "收起";
+    });
+
+    card.parentNode.replaceChild(det, card);
+  });
+}
+try{ setupCollapsible(); }catch(e){ console.warn("collapsible failed", e); }
+
+// 光斑跟着鼠标走：每张卡片单独记录相对坐标
+(function spotlight(){
+  const root = document.getElementById("main");
+  if(!root) return;
+  root.addEventListener("pointermove", (ev) => {
+    const card = ev.target.closest && ev.target.closest(".card");
+    if(!card) return;
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty("--mx", (ev.clientX - rect.left) + "px");
+    card.style.setProperty("--my", (ev.clientY - rect.top) + "px");
+  }, {passive:true});
+})();
+
+(async function boot(){
+  el("loading").style.display = "block";
+  const bridge = await waitForBridge(15000);
+  if(!bridge){
+    el("loading").style.display = "none";
+    const diag = "当前地址：" + location.pathname + "\n" +
+      "AstrBotPluginView：" + (typeof window.AstrBotPluginView) + "\n" +
+      "桥接脚本：" + (document.querySelector('script[src*="bridge-sdk"]') ? "已注入" : "未注入");
+    el("guard").innerHTML = "没有拿到面板桥接（bridge）。<br>" +
+      "请从 <code>AstrBot 面板 → 左侧「扩展功能」→ 超星打卡设置</code> 进入本页。<br>" +
+      "直接输入网址或从收藏夹打开不会加载数据。" +
+      '<pre style="margin-top:14px;text-align:left;background:#12161f;border:1px solid #242c3a;' +
+      'border-radius:10px;padding:12px;font-size:13px;color:#8590a6;white-space:pre-wrap">' + diag + "</pre>";
+    return;
+  }
+  try{ if(typeof bridge.ready === "function"){ await bridge.ready(); } }catch(e){}
+  try{ await load(); }
+  catch(e){
+    el("loading").style.display = "none";
+    el("guard").style.display = "block";
+    el("guard").textContent = "加载失败：" + e.message;
+  }
+})();
+</script>
+</body>
+</html>

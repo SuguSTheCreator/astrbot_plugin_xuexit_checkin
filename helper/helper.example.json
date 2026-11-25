@@ -1,0 +1,8 @@
+{
+  "server": "root@1.2.3.4",
+  "port": 8898,
+  "bind": "127.0.0.1",
+  "allow": "chaoxing.com,cxstar.com,xuexixing.com",
+  "idle_exit": 600,
+  "max_life": 3600
+}
