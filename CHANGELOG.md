@@ -1,5 +1,34 @@
 # 更新记录
 
+## 0.8.0
+
+装上 ruff 与 mypy 做了一轮体检，抓出来的都不是风格问题：
+
+**修复**
+
+- **Webhook 在插件模式下从来没发过**。`WEBHOOK_URL` 读进了配置，但插件侧一次都没调用发送函数，
+  等于死配置（只有 CLI 单账号模式真的发）。现在每条结果与每日汇总都会推，发送放线程池不阻塞。
+- **CLI 多账号模式也不发 Webhook**，现在补上汇总推送。
+- `_retry(attempts=0)` 会 `raise None` 变成 TypeError；现在至少跑一次，且不会抛空异常。
+- 5 处 `raise` 丢了异常链（`from exc`），排查时看不到根因，已补。
+- `AccountOutcome.result` 标注是 `CheckinResult` 但默认 `None`，改成 `Optional`。
+- 清掉 7 个无用 import、9 处多余 open 模式、4 处 import 乱序、9 个文件缺尾换行。
+
+**新增**
+
+- 面板「⑦ 权限与通知」新增 Webhook 地址输入框（原来只能改配置文件，面板里根本看不到）。
+- `ruff.toml` / `mypy.ini` / `requirements-dev.txt`：门槛从宽，只拦真问题。
+  风格规则（长行、% 格式化、try/except/pass）显式关掉，不做无收益 churn。
+- CI 新增 lint 作业（ruff + mypy）与核心覆盖率下限 82%。
+
+**测试**
+
+- 123 → 150 个用例。补上两块此前几乎没测的地方：
+  `formlink`（解析用户粘贴的链接）**0% → 100%**，`health`（失败分类与体检）**49% → 95%**。
+- 核心覆盖率 80% → **84%**。
+- 收窄两处 `assertRaises(Exception)`，改成具体异常类型；轮转测试补上写入断言。
+
+
 ## 0.7.1
 
 存储层原来只有一个 `save()`，写失败就抛。可是「用户点绑定」和「打卡成功后补记一笔」

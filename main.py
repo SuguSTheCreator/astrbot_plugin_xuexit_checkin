@@ -6,7 +6,6 @@
 import asyncio
 import json
 import random
-import re
 import time
 import traceback
 from pathlib import Path
@@ -18,21 +17,20 @@ from astrbot.api.star import Context, Star, StarTools
 
 from .adapters.webhook import send_webhook
 from .audit import AuditLog
-from .policy import GUEST_COMMANDS
-from .policy import gate as policy_gate
-from .policy import identity as policy_identity
-from .webui import SettingsApi
 from .chaoxing import CheckinConfig, run_once
-from .chaoxing.health import classify
 from .chaoxing.accounts import AccountStore
+from .chaoxing.health import classify
 from .chaoxing.models import beijing_now
 from .chaoxing.qrlogin import (
     STATE_CONFIRMED,
     STATE_EXPIRED,
     STATE_SCANNED,
     QrLoginSession,
-    QrLoginError,
 )
+from .policy import GUEST_COMMANDS
+from .policy import gate as policy_gate
+from .policy import identity as policy_identity
+from .webui import SettingsApi
 
 PLUGIN_NAME = "astrbot_plugin_xuexit_checkin"
 DEFAULT_SCHEDULE = "08:10"
@@ -474,6 +472,7 @@ class XuexitCheckinPlugin(Star):
                 delivered += 1
         if targets:
             logger.info("[xuexit] summary delivered %d/%d", delivered, len(targets))
+        await self._push_webhook("健康日报汇总", summary)
         logger.info("[xuexit] %s", summary)
 
     async def _apply_result(self, key, record, result, notify_account=False):
@@ -487,9 +486,10 @@ class XuexitCheckinPlugin(Star):
             self._store.mark_success(key, stage=result.stage)
             self._store.set_health(key, "ok", result.message)
             if notify_account and not getattr(result, "skipped", False):
-                await self._notify_account(record, self._fmt(
-                    "PUSH_TEXT_OK", "OK {name} - {message}",
-                    name=name, message=result.message))
+                text = self._fmt("PUSH_TEXT_OK", "OK {name} - {message}",
+                                 name=name, message=result.message)
+                await self._notify_account(record, text)
+                await self._push_webhook("健康日报", text)
             return "ok"
 
         status, tag, action = classify(getattr(result, "stage", ""), result.message)
@@ -501,6 +501,7 @@ class XuexitCheckinPlugin(Star):
         if action:
             text += "\n建议：" + action
         await self._notify_admin(text)
+        await self._push_webhook("健康日报", text)
         return status
 
     def _fmt(self, key, default, **kw):
@@ -538,6 +539,26 @@ class XuexitCheckinPlugin(Star):
     async def _notify_admin(self, text):
         for umo in _as_list(self._get("ADMIN_UMOS", [])):
             await self._send_text(umo, text)
+
+    async def _push_webhook(self, title, text):
+        """把结果也发到通用 Webhook（Server酱 / PushPlus / Bark）。
+
+        历史 bug：WEBHOOK_URL 读进了配置，但插件侧从来没调用过发送函数，
+        等于这一项在插件模式下是死配置（只有 CLI 单账号模式真的发）。
+        发送是阻塞 IO，放线程池里跑，别卡住事件循环。
+        """
+        url = str(self._get("WEBHOOK_URL", "") or "").strip()
+        if not url:
+            return False
+        try:
+            loop = asyncio.get_running_loop()
+            ok = await loop.run_in_executor(None, lambda: send_webhook(url, title, text))
+            if not ok:
+                logger.warning("[xuexit] Webhook 推送失败（检查地址与 token）")
+            return bool(ok)
+        except Exception:
+            logger.warning("[xuexit] Webhook 推送异常：%s", traceback.format_exc(limit=2))
+            return False
 
     # ---------------- 扫码绑定 ----------------
     async def _start_login(self, event, name, target_key, origin_umo):

@@ -111,7 +111,7 @@ class AccountStore:
         if not self.path.exists():
             return self
         try:
-            with open(self.path, "r", encoding="utf-8") as fh:
+            with open(self.path, encoding="utf-8") as fh:
                 raw = json.load(fh)
         except ValueError as exc:
             self.load_error = "账号文件不是合法 JSON：" + str(exc)

@@ -3,8 +3,6 @@ import json
 import os
 import tempfile
 
-import pytest
-
 from chaoxing.models import CheckinResult
 from chaoxing.runner import (
     load_accounts,

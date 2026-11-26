@@ -14,8 +14,8 @@ def parse_location(value):
     try:
         lat = float(parts[0])
         lng = float(parts[1])
-    except ValueError:
-        raise ConfigError("LOCATION 的 lat/lng 必须是数字", detail=value)
+    except ValueError as exc:
+        raise ConfigError("LOCATION 的 lat/lng 必须是数字", detail=value) from exc
     address = parts[2] if len(parts) > 2 else ""
     return {"lat": lat, "lng": lng, "address": address}
 
@@ -29,7 +29,7 @@ def build_form_data(template, location=None):
         try:
             data = json.loads(text)
         except json.JSONDecodeError as exc:
-            raise ConfigError("FORM_TEMPLATE 不是合法 JSON", detail=str(exc))
+            raise ConfigError("FORM_TEMPLATE 不是合法 JSON", detail=str(exc)) from exc
     elif isinstance(template, dict):
         data = template
     else:

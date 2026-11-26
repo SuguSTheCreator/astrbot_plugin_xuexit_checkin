@@ -12,8 +12,14 @@ from .errors import (
 )
 from .forms import build_form_data, parse_location
 from .models import CheckinConfig, CheckinResult
-from .qrlogin import QrLoginSession, QrLoginError
-from .runner import AccountOutcome, load_accounts, load_accounts_dir, merge_account, run_all
+from .qrlogin import QrLoginError, QrLoginSession
+from .runner import (
+    AccountOutcome,
+    load_accounts,
+    load_accounts_dir,
+    merge_account,
+    run_all,
+)
 from .service import run_once
 from .state import StateStore
 

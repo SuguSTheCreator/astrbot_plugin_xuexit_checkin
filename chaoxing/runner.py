@@ -2,6 +2,7 @@
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from .models import CheckinConfig, CheckinResult
 from .service import run_once
@@ -13,7 +14,7 @@ META_KEYS = ("name", "enabled", "notify_umos", "remark")
 class AccountOutcome:
     name: str
     ok: bool
-    result: CheckinResult = None
+    result: Optional[CheckinResult] = None
     error: str = ""
     skipped: bool = False
 
@@ -63,7 +64,7 @@ def load_accounts(path):
       {"defaults": {...}, "accounts": [{...}, ...]}
       [{...}, {...}]                     （纯数组，无 defaults）
     """
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         raw = json.load(fh)
     if isinstance(raw, list):
         return {}, raw
@@ -85,7 +86,7 @@ def load_accounts_dir(directory):
         raise ValueError("账号目录不存在：" + str(directory))
     accounts = []
     for path in sorted(base.glob("*.json")):
-        with open(path, "r", encoding="utf-8") as fh:
+        with open(path, encoding="utf-8") as fh:
             entry = json.load(fh)
         if not isinstance(entry, dict):
             raise ValueError("账号文件必须是对象：" + path.name)

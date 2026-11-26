@@ -18,7 +18,7 @@ class StateStore:
         if not self.path or not os.path.exists(self.path):
             return {}
         try:
-            with open(self.path, "r", encoding="utf-8") as fh:
+            with open(self.path, encoding="utf-8") as fh:
                 data = json.load(fh)
             return data if isinstance(data, dict) else {}
         except (OSError, ValueError):

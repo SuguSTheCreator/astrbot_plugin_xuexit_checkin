@@ -1,5 +1,4 @@
 """账号绑定存储测试。"""
-import json
 import os
 import tempfile
 

@@ -20,7 +20,6 @@ import select
 import socket
 import socketserver
 import subprocess
-import sys
 import threading
 import time
 
@@ -101,14 +100,14 @@ def ensure_key(path):
     if os.path.exists(path):
         pub = path + ".pub"
         if os.path.exists(pub):
-            with open(pub, "r", encoding="utf-8") as fh:
+            with open(pub, encoding="utf-8") as fh:
                 return path, fh.read().strip()
     subprocess.run(["ssh-keygen", "-t", "ed25519", "-N", "", "-q", "-f", path,
                     "-C", "xuexit-login-helper"], check=False)
     pub = path + ".pub"
     text = ""
     if os.path.exists(pub):
-        with open(pub, "r", encoding="utf-8") as fh:
+        with open(pub, encoding="utf-8") as fh:
             text = fh.read().strip()
     return path, text
 
@@ -121,7 +120,7 @@ def main():
     conf = {}
     if known.config:
         import json as _json
-        with open(known.config, "r", encoding="utf-8") as fh:
+        with open(known.config, encoding="utf-8") as fh:
             conf = _json.load(fh) or {}
         print("已读取配置：" + known.config)
 

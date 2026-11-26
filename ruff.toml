@@ -1,0 +1,16 @@
+# 静态检查配置。门槛从宽：只拦真问题，不为风格折腾。
+target-version = "py38"
+line-length = 100
+exclude = ["_out", "__pycache__", ".pytest_cache", "state"]
+
+[lint]
+select = ["E", "F", "W", "B", "I", "UP", "C4", "SIM"]
+ignore = [
+  "E501",    # 中文注释天然长，换行反而难读
+  "UP031",   # 全项目统一用 % 格式化，改 f-string 是纯 churn
+  "SIM105",  # try/except/pass 比 contextlib.suppress 更直白
+  "SIM108",  # 三元表达式不一定更好读
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["B011"]

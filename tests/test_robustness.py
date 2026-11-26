@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from chaoxing.accounts import AccountStore, COOKIE_PREFIX
+from chaoxing.accounts import COOKIE_PREFIX, AccountStore
 from chaoxing.state import StateStore
 
 
@@ -137,7 +137,7 @@ class TestBestEffortWrites(unittest.TestCase):
     def test_user_initiated_save_still_raises(self):
         store = AccountStore(Path(self.dir) / "accounts.json")
         store.path = Path(self.dir)
-        with self.assertRaises(Exception):
+        with self.assertRaises(OSError):
             store.bind("k", name="甲", cookie="_uid=1")
 
     def test_state_best_effort_swallows_and_records(self):
@@ -270,9 +270,10 @@ class TestWriteSemanticsBoundary(unittest.TestCase):
                     if fn.name in ("save", "save_best_effort"):
                         continue  # 包装方法本身不算业务方法
                     for n in ast.walk(fn):
-                        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute):
-                            if n.func.attr in found:
-                                found[n.func.attr].add(fn.name)
+                        if (isinstance(n, ast.Call)
+                                and isinstance(n.func, ast.Attribute)
+                                and n.func.attr in found):
+                            found[n.func.attr].add(fn.name)
             self.assertEqual(found, expected,
                              "%s 的写入语义分类变了，请确认是有意为之并更新此表" % rel)
 

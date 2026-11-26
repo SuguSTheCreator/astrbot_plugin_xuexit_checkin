@@ -31,7 +31,7 @@ def _helper_pubkey_path():
 def _container_gateway():
     """读 /proc/net/route 里的默认网关，得到 docker 网桥地址。"""
     try:
-        with open("/proc/net/route", "r", encoding="utf-8") as fh:
+        with open("/proc/net/route", encoding="utf-8") as fh:
             for line in fh.readlines()[1:]:
                 parts = line.split()
                 if len(parts) > 2 and parts[1] == "00000000":
@@ -126,6 +126,7 @@ class SettingsApi:
                 "push_text_ok": str(plugin.config.get("PUSH_TEXT_OK", "") or ""),
                 "push_text_fail": str(plugin.config.get("PUSH_TEXT_FAIL", "") or ""),
                 "push_text_summary": str(plugin.config.get("PUSH_TEXT_SUMMARY", "") or ""),
+                "webhook_url": str(plugin.config.get("WEBHOOK_URL", "") or ""),
                 "form_url_days": int(plugin.config.get("FORM_URL_CHECK_DAYS", 30) or 0),
                 "audit_enabled": bool(plugin.config.get("AUDIT_ENABLED", True)),
                 "audit": self._audit_tail(15),
@@ -553,6 +554,7 @@ class SettingsApi:
                                      ("push_text_ok", "PUSH_TEXT_OK"),
                                      ("push_text_fail", "PUSH_TEXT_FAIL"),
                                      ("push_text_summary", "PUSH_TEXT_SUMMARY"),
+                                     ("webhook_url", "WEBHOOK_URL"),
                                      ("form_url_days", "FORM_URL_CHECK_DAYS"),
                                      ("schedule", "SCHEDULE_TIME"), ("qr_fid", "QR_FID"),
                                      ("login_proxy", "LOGIN_PROXY"),
@@ -876,7 +878,7 @@ class SettingsApi:
         sessions = getattr(self.plugin, "_web_qr", None)
         if sessions is None:
             sessions = {}
-            setattr(self.plugin, "_web_qr", sessions)
+            self.plugin._web_qr = sessions
         proxy = str(self.plugin.config.get("LOGIN_PROXY", "") or "")
         fid = str(self.plugin.config.get("QR_FID", "") or "")
         try:

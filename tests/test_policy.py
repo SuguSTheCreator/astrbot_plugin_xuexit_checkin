@@ -2,7 +2,6 @@ import unittest
 
 from policy import ADMIN, GUEST, MEMBER, gate, identity, matrix, parse_command
 
-
 ADMINS = ["qqbot:FriendMessage:AAA"]
 IDS = ["0123456789ABCDEF0123456789ABCDEF"]
 

@@ -32,7 +32,7 @@ from chaoxing import (  # noqa: E402
 
 
 def load_config(path):
-    with open(path, "r", encoding="utf-8") as fh:
+    with open(path, encoding="utf-8") as fh:
         data = json.load(fh)
     return CheckinConfig.from_dict(data)
 
@@ -84,6 +84,13 @@ def _run_multi(args):
         failed = [item for item in outcomes if not item.ok]
         print("")
         print("完成：成功 %d / 共 %d" % (len(outcomes) - len(failed), len(outcomes)))
+
+    webhook_url = str((defaults or {}).get("webhook_url", "") or "")
+    if webhook_url:
+        lines = [item.to_text() for item in outcomes]
+        failed = [item for item in outcomes if not item.ok]
+        lines.append("完成：成功 %d / 共 %d" % (len(outcomes) - len(failed), len(outcomes)))
+        send_webhook(webhook_url, "健康日报汇总", "\n".join(lines))
 
     return 0 if all(item.ok for item in outcomes) else 1
 

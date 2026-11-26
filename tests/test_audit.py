@@ -48,8 +48,8 @@ class TestAuditLog(unittest.TestCase):
         old = audit_module.MAX_BYTES
         audit_module.MAX_BYTES = 200
         try:
-            for i in range(20):
-                self.log.write("evt", detail="x" * 40)
+            for _ in range(20):
+                self.assertTrue(self.log.write("evt", detail="x" * 40))
             self.assertTrue(Path(str(self.path) + ".1").exists())
         finally:
             audit_module.MAX_BYTES = old

@@ -555,6 +555,15 @@ sender_id: E04B..."></textarea>
         </div>
       </div>
 
+      <div class="field" style="margin-top:14px">
+        <label>额外推到 Webhook（可选，不填就只发 QQ）</label>
+        <input id="optWebhook" placeholder="https://sctapi.ftqq.com/&lt;SENDKEY&gt;.send">
+        <div class="hint">
+          支持 Server酱 / PushPlus / Bark / 自定义 URL。Server酱 与 PushPlus 可推到微信，
+          Bark 推到 iPhone。<b>不想接 QQ 机器人时，这一项就够用了。</b>
+        </div>
+      </div>
+
       <details><summary>会话和 openid 有什么区别？</summary>
         <div class="body">
           <b>会话（UMO）</b>＝一段对话的地址。私聊是一个地址，群里 @ 它又是另一个。<br>
@@ -789,6 +798,7 @@ function render(){
   if(el("pushOk")) el("pushOk").value = state.push_text_ok || "";
   if(el("pushFail")) el("pushFail").value = state.push_text_fail || "";
   if(el("pushSummary")) el("pushSummary").value = state.push_text_summary || "";
+  if(el("optWebhook")) el("optWebhook").value = state.webhook_url || "";
   if(el("formSource")) el("formSource").value = state.form_url_source || "";
   if(el("formSourceDays")) el("formSourceDays").value = (state.form_url_days === 0) ? 0 : (state.form_url_days || 30);
   el("optSchedule").value = state.schedule || "";
@@ -908,6 +918,7 @@ el("btnSaveOpts").onclick = () => act({
   push_text_ok: (el("pushOk").value || "").trim(),
   push_text_fail: (el("pushFail").value || "").trim(),
   push_text_summary: (el("pushSummary").value || "").trim(),
+  webhook_url: (el("optWebhook").value || "").trim(),
   form_url_days: el("formSourceDays").value.trim(),
   schedule: el("optSchedule").value.trim(),
   qr_fid: el("optFid").value.trim(),

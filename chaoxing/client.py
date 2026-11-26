@@ -38,7 +38,7 @@ class ChaoxingClient:
                 url, headers=self.headers, timeout=self.config.timeout, **kwargs
             )
         except requests.RequestException as exc:
-            raise NetworkError("网络请求失败", detail=str(exc))
+            raise NetworkError("网络请求失败", detail=str(exc)) from exc
 
     def _post(self, url, data):
         headers = dict(self.headers)
@@ -49,7 +49,7 @@ class ChaoxingClient:
                 url, data=data, headers=headers, timeout=self.config.timeout
             )
         except requests.RequestException as exc:
-            raise NetworkError("网络提交失败", detail=str(exc))
+            raise NetworkError("网络提交失败", detail=str(exc)) from exc
 
     def get_check_code(self):
         params = {"id": self.config.form_id, "enc": self.config.enc}
@@ -181,8 +181,8 @@ def _parse_submit_response(resp):
         raise NetworkError("服务器错误（HTTP " + str(status) + "）", detail=text[:300])
     try:
         payload = json.loads(text)
-    except (ValueError, TypeError):
-        raise SubmitError("提交返回的不是 JSON", detail=text[:300])
+    except (ValueError, TypeError) as exc:
+        raise SubmitError("提交返回的不是 JSON", detail=text[:300]) from exc
 
     ok = False
     if isinstance(payload, dict):
@@ -195,8 +195,8 @@ def _parse_submit_response(resp):
             if "成功" in msg:
                 ok = True
     if not ok:
-        msg = payload.get("msg") if isinstance(payload, dict) else None
-        msg_text = str(msg or "")
+        raw_msg = payload.get("msg") if isinstance(payload, dict) else None
+        msg_text = str(raw_msg or "")
         if any(hint in msg_text for hint in ALREADY_HINTS):
             raise AlreadySubmitted("今天已经提交过（每日限 1 次）", detail=text[:300])
         raise SubmitError("提交失败：" + str(msg_text or "未知原因"), detail=text[:500])

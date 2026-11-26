@@ -1,4 +1,3 @@
-import json
 
 import pytest
 
@@ -7,6 +6,7 @@ from chaoxing.qrlogin import (
     STATE_EXPIRED,
     STATE_SCANNED,
     STATE_WAITING,
+    QrLoginError,
     QrLoginSession,
 )
 
@@ -73,7 +73,7 @@ def test_refresh_extracts_uuid_and_image():
 
 def test_refresh_raises_when_page_changed():
     fake = FakeSession("<html>no qr</html>")
-    with pytest.raises(Exception):
+    with pytest.raises(QrLoginError):
         QrLoginSession(fid="39037", session=fake).refresh()
 
 

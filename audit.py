@@ -10,6 +10,7 @@ import logging
 import os
 import time
 from pathlib import Path
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +67,7 @@ class AuditLog:
             lines = self.path.read_text(encoding="utf-8").splitlines()
         except Exception:
             return []
-        out = []
+        out: List[Dict] = []
         for line in reversed(lines):
             if len(out) >= limit:
                 break

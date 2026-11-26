@@ -27,16 +27,16 @@ class FakeSession:
 
 
 def make_config(**overrides):
-    base = dict(
-        cookie="c=1",
-        form_id="123456",
-        enc="enc",
-        fid_enc="fid",
-        state_fid="39037",
-        uuid="u",
-        submit_version="v",
-        dry_run=False,
-    )
+    base = {
+        "cookie": "c=1",
+        "form_id": "123456",
+        "enc": "enc",
+        "fid_enc": "fid",
+        "state_fid": "39037",
+        "uuid": "u",
+        "submit_version": "v",
+        "dry_run": False,
+    }
     base.update(overrides)
     return CheckinConfig(**base)
 

@@ -5,6 +5,19 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - name: ruff（真问题门槛，风格规则已在 ruff.toml 里关掉）
+        run: ruff check .
+      - name: mypy（只查核心逻辑，见 mypy.ini）
+        run: mypy
+
   test38:
     runs-on: ubuntu-22.04
     steps:
@@ -13,7 +26,7 @@ jobs:
         with:
           python-version: "3.8"
       - run: pip install -r requirements.txt
-      - run: python -m compileall -q chaoxing standalone adapters tools tests main.py
+      - run: python -m compileall -q chaoxing standalone adapters tests main.py webui.py policy.py audit.py
       - run: python -m pytest -q
 
   test312:
@@ -23,6 +36,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - run: python -m compileall -q chaoxing standalone adapters tools tests main.py
-      - run: python -m pytest -q
+      - run: pip install -r requirements-dev.txt
+      - run: python -m compileall -q chaoxing standalone adapters tests main.py webui.py policy.py audit.py
+      - name: 测试 + 核心覆盖率下限
+        run: python -m pytest -q --cov=chaoxing --cov=policy --cov=audit --cov-report=term-missing --cov-fail-under=82

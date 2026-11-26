@@ -154,14 +154,18 @@ def _try_sync(client, config):
 
 
 def _retry(fn, config, attempts=3):
+    """网络错误重试。attempts 至少 1，否则直接跑一次 —— 不能 raise None。"""
     last = None
-    for index in range(attempts):
+    for index in range(max(1, int(attempts))):
         try:
             return fn()
         except NetworkError as exc:
             last = exc
-            if index < attempts - 1:
+            if index < max(1, int(attempts)) - 1:
                 time.sleep(1.5 * (index + 1))
+    if last is None:
+        # 理论上到不了：循环至少跑一次，要么 return 要么给 last 赋值
+        raise NetworkError("重试逻辑异常：没有捕获到任何结果")
     raise last
 
 
