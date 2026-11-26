@@ -68,14 +68,17 @@ python standalone/cli.py --config config.local.json
 
 在 `config.local.json` 里填 `webhook_url`：
 
-| 服务 | 填什么 | 效果 |
+| 服务 | 填什么 | 实际发出的内容 |
 |---|---|---|
-| Server酱 | `https://sctapi.ftqq.com/<你的SENDKEY>.send` | 推到微信 |
-| PushPlus | `http://www.pushplus.plus/send?token=<你的token>` | 推到微信 |
-| Bark | `https://api.day.app/<你的key>` | 推到 iPhone |
-| 自定义 | 任意 URL | 收到 JSON `{title, text, content}` |
+| Server酱 | `https://sctapi.ftqq.com/<你的SENDKEY>.send` | 表单 `title` + `desp` |
+| PushPlus | `https://www.pushplus.plus/send?token=<你的token>` | JSON `{token, title, content, template}` |
+| Bark | `https://api.day.app/<你的key>` | JSON `{title, body}` |
+| 自定义 | 任意 URL | JSON `{title, text, content}` |
 
-代码见 `adapters/webhook.py`：Server酱 / PushPlus 走表单 `{title, desp}`，其余走 JSON。
+**各家字段名不一样**，代码按域名分别构造（`adapters/webhook.py` 的 `build_request()`）。
+另外这些服务失败时也可能返回 HTTP 200，真正的结论在 body 的 `code` 里，代码会一起判。
+
+> PushPlus 需要实名认证后才能调用发送接口；token 从 URL 的 `?token=` 里取。
 
 ### 定时
 
@@ -90,18 +93,51 @@ python standalone/cli.py --config config.local.json
 
 ## 4. 路线 B：AstrBot + QQ 官方机器人
 
-AstrBot 官方文档推荐这条，更稳定。
+AstrBot 官方文档推荐这条，更稳定，而且**支持扫码一键创建**，不用自己申请。
 
 ```text
 1. 起 AstrBot（见 README「快速开始」第 1 步）
-2. q.qq.com 开放平台创建机器人，拿到 AppID / AppSecret
-3. AstrBot WebUI → 机器人 → 创建机器人 → 选「QQ 官方机器人」
-4. 填 AppID / AppSecret，保存
-5. 在 QQ 里私聊这个机器人发一句话，能收到回复就通了
+2. WebUI → 左边栏「机器人」→「+ 创建机器人」
+3. 选「QQ 官方机器人（WebSocket）」
+4. 选择创建方式 →「扫码一键创建」→ 开始创建 → 手机 QQ 扫码确认
+   AstrBot 自动写入 AppID / AppSecret
+5. 确认「启用」已勾选 → 保存
+6. 回到 QQ 开放平台，点机器人右边的「扫码聊天」，手机 QQ 扫码即可对话
 ```
 
-> 官方机器人**不能主动私聊陌生人**：对方必须先跟它说过话，你才能给它发消息。
-> 所以配推送会话之前，先让本人私聊机器人发一句 `/checkin_bind`。
+### 4.1 手动创建（扫码不可用时）
+
+```text
+1. bot.q.qq.com 创建机器人 → 填名称/简介/头像 → 提交审核
+2. 「沙箱配置」里设置沙箱频道 / QQ 群 / QQ 私聊（人数 ≤ 20）
+3. 「开发 → 开发设置」拿 appid / secret
+4. 同一页把服务器公网 IP 加进「IP 白名单」
+   （不知道自己 IP：终端跑 curl ifconfig.me）
+5. AstrBot 里选「手动创建」，填 appid / secret
+     enable_group_c2c            消息列表单聊，保持开启
+     enable_guild_direct_message 频道私聊，按需
+```
+
+### 4.2 消息额度（官方现行规则）
+
+每天推一条打卡结果，**完全在额度内**。具体限制：
+
+| 类型 | 规则 |
+|---|---|
+| **主动消息**（机器人自己发起） | 接收方维度 **20 条/分钟**，**每个好友每天最多 1000 条** |
+| 主动消息发送方频控 | 企业/个人实名认证 10 QPS；未认证 5 QPS 且 30 QPM |
+| **被动回复**（带 msg_id） | 收到消息后 **60 分钟**内有效，每条最多回 **4 次** |
+| 互动召回（is_wakeup） | 用户对话后 30 天内，4 个周期各 1 条 |
+
+> 网上流传的「主动消息每月只有 4 条」是**旧版规则**，现行单聊接口文档已改成每天 1000 条/好友。
+> 以 [官方单聊接口文档](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_users_user_openid_messages.post.html) 为准。
+
+### 4.3 两个前提
+
+- **私聊**：用户要先和机器人建立好友关系（扫码聊天 / 私聊过一次），否则拿不到会话地址也发不进去。
+  所以配推送会话之前，先让本人私聊机器人发一句 `/checkin_bind`。
+- **群聊**：机器人资料页 →「添加到群聊」（目前只能加自己为群主的群），
+  再在群设置里打开「获取群内全部消息」+「机器人主动在群聊内发言」，否则定时推送发不出来。
 
 ---
 
