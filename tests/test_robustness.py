@@ -240,5 +240,42 @@ class TestContactsRobustness(unittest.TestCase):
         self.assertEqual(self.plugin._contacts_error, "")
 
 
+class TestWriteSemanticsBoundary(unittest.TestCase):
+    """固化「哪些算记账」的分类表。
+
+    新增会写盘的方法时必须在这里归类，否则这条测试失败 ——
+    让边界靠机器守，而不是靠人记得。
+    """
+
+    EXPECTED = {
+        "chaoxing/accounts.py": {
+            "save": {"bind", "remove", "update_cookie", "set_owner"},
+            "save_best_effort": {"mark_success", "set_health", "mark_expired"},
+        },
+        "chaoxing/state.py": {
+            "save": set(),
+            "save_best_effort": {"mark_success"},
+        },
+    }
+
+    def test_classification_matches(self):
+        import ast
+
+        root = Path(__file__).resolve().parent.parent
+        for rel, expected in self.EXPECTED.items():
+            tree = ast.parse((root / rel).read_text(encoding="utf-8"))
+            found = {"save": set(), "save_best_effort": set()}
+            for cls in [n for n in ast.walk(tree) if isinstance(n, ast.ClassDef)]:
+                for fn in [n for n in cls.body if isinstance(n, ast.FunctionDef)]:
+                    if fn.name in ("save", "save_best_effort"):
+                        continue  # 包装方法本身不算业务方法
+                    for n in ast.walk(fn):
+                        if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute):
+                            if n.func.attr in found:
+                                found[n.func.attr].add(fn.name)
+            self.assertEqual(found, expected,
+                             "%s 的写入语义分类变了，请确认是有意为之并更新此表" % rel)
+
+
 if __name__ == "__main__":
     unittest.main()

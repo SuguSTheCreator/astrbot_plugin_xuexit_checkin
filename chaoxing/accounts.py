@@ -185,9 +185,16 @@ class AccountStore:
     def save_best_effort(self):
         """记账式写入：失败只记录，不抛。
 
-        用在「事情已经做完了，只是补记一笔」的场景（打卡成功后记时间、记体检）。
-        这时候抛异常会把已经成功的结论翻成失败，比丢一条记录更糟。
-        用户主动发起的写入（绑定、改 Cookie、撤回）仍然用 save()，失败必须报出来。
+        选哪个方法，只看一个问题：**这次写入是用户点出来的，还是程序跑完后补记的？**
+
+        用户点的 → save()，他需要知道成没成：
+            bind / remove / update_cookie / set_owner
+        程序补记 → save_best_effort()，事情已经做完，记账失败不该翻结论：
+            mark_success / set_health / mark_expired
+
+        判错的后果不对称：记账误用 save() 只是退回旧行为（成功被报成失败）；
+        用户操作误用 best_effort 会静默丢数据，所以新增方法时按上面这条规则归类，
+        tests/test_robustness.py 里有一张分类表会把新增方法拦下来。
         """
         try:
             self.save()
