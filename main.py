@@ -445,7 +445,9 @@ class XuexitCheckinPlugin(Star):
                     result = await self._run(self._build_config(record))
                     if result.ok:
                         self._store.mark_success(key, stage=result.stage)
-                        await self._notify_account(record, "RETRY OK " + name + " - " + result.message)
+                        await self._notify_account(record, self._fmt(
+                            "PUSH_TEXT_OK", "OK {name} - {message}",
+                            name=name, message=result.message))
                         for idx, item in enumerate(outcomes):
                             if item[0] == name:
                                 outcomes[idx] = (name, True, result.message)
@@ -453,8 +455,9 @@ class XuexitCheckinPlugin(Star):
                 except Exception as exc:
                     logger.error("[xuexit] retry %s failed: %s", name, exc)
 
-        summary = "checkin " + beijing_now().strftime("%Y-%m-%d") + ": %d/%d ok" % (
-            sum(1 for _, ok, _ in outcomes if ok), len(outcomes))
+        summary = self._fmt("PUSH_TEXT_SUMMARY", "checkin {date}: {ok}/{total} ok",
+                             date=beijing_now().strftime("%Y-%m-%d"),
+                             ok=sum(1 for _, ok, _ in outcomes if ok), total=len(outcomes))
         delivered = 0
         targets = _as_list(self._get("SUMMARY_UMOS", []))
         for umo in targets:
@@ -475,18 +478,30 @@ class XuexitCheckinPlugin(Star):
             self._store.mark_success(key, stage=result.stage)
             self._store.set_health(key, "ok", result.message)
             if notify_account and not getattr(result, "skipped", False):
-                await self._notify_account(record, "OK " + name + " - " + result.message)
+                await self._notify_account(record, self._fmt(
+                    "PUSH_TEXT_OK", "OK {name} - {message}",
+                    name=name, message=result.message))
             return "ok"
 
         status, tag, action = classify(getattr(result, "stage", ""), result.message)
         if tag == "NEED_RELOGIN":
             self._store.mark_expired(key)
         self._store.set_health(key, status, result.message)
-        text = tag + " " + name + " - " + result.message
+        text = self._fmt("PUSH_TEXT_FAIL", "{tag} {name} - {message}",
+                         tag=tag, name=name, message=result.message, advice=action or "")
         if action:
             text += "\n建议：" + action
         await self._notify_admin(text)
         return status
+
+    def _fmt(self, key, default, **kw):
+        """按模板生成推送文案；模板写错时退回默认，不因为占位符把打卡搞挂。"""
+        tpl = str(self._get(key, default) or default)
+        try:
+            return tpl.format(**kw)
+        except Exception:
+            logger.warning("[xuexit] 文案模板 %s 解析失败，用默认", key)
+            return default.format(**kw)
 
     def _umo_for(self, record):
         """账号本人的会话地址。

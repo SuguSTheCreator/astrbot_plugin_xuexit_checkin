@@ -533,6 +533,26 @@ sender_id: E04B..."></textarea>
         <button class="primary" id="btnAddSummary">添加推送会话</button>
       </div>
 
+      <div style="font-size:13px;font-weight:600;color:#c9d6ea;margin:18px 0 6px">推送文案（可自定义）</div>
+      <div style="font-size:13px;color:var(--sub);margin-bottom:10px">
+        留空就用默认。<code>{name}</code> 账号名、<code>{message}</code> 结果说明、<code>{tag}</code> 状态、
+        <code>{advice}</code> 建议、<code>{date}</code> 日期、<code>{ok}</code>/<code>{total}</code> 计数。
+      </div>
+      <div class="grid">
+        <div class="field">
+          <label>成功时</label>
+          <input id="pushOk" placeholder="OK {name} - {message}">
+        </div>
+        <div class="field">
+          <label>失败时</label>
+          <input id="pushFail" placeholder="{tag} {name} - {message}">
+        </div>
+        <div class="field">
+          <label>每日汇总</label>
+          <input id="pushSummary" placeholder="checkin {date}: {ok}/{total} ok">
+        </div>
+      </div>
+
       <details><summary>会话和 openid 有什么区别？</summary>
         <div class="body">
           <b>会话（UMO）</b>＝一段对话的地址。私聊是一个地址，群里 @ 它又是另一个。<br>
@@ -753,6 +773,9 @@ function render(){
   }
   renderAudit(state.audit || []);
   if(el("auditCount")) el("auditCount").textContent = (state.audit_count || 0) + " 条";
+  if(el("pushOk")) el("pushOk").value = state.push_text_ok || "";
+  if(el("pushFail")) el("pushFail").value = state.push_text_fail || "";
+  if(el("pushSummary")) el("pushSummary").value = state.push_text_summary || "";
   if(el("formSource")) el("formSource").value = state.form_url_source || "";
   if(el("formSourceDays")) el("formSourceDays").value = (state.form_url_days === 0) ? 0 : (state.form_url_days || 30);
   el("optSchedule").value = state.schedule || "";
@@ -869,6 +892,9 @@ el("btnSaveOpts").onclick = () => act({
   auto_sync: el("optSync").checked,
   allow_self_bind: el("optSelfBind").checked,
   form_url_source: el("formSource").value.trim(),
+  push_text_ok: (el("pushOk").value || "").trim(),
+  push_text_fail: (el("pushFail").value || "").trim(),
+  push_text_summary: (el("pushSummary").value || "").trim(),
   form_url_days: el("formSourceDays").value.trim(),
   schedule: el("optSchedule").value.trim(),
   qr_fid: el("optFid").value.trim(),

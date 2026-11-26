@@ -221,6 +221,24 @@
     "default": 30,
     "hint": "默认 30 天查一次；填 0 表示每次打卡前都查"
   },
+  "PUSH_TEXT_OK": {
+    "description": "成功推送文案",
+    "type": "string",
+    "default": "OK {name} - {message}",
+    "hint": "可用变量：{name} 账号名 / {message} 结果说明"
+  },
+  "PUSH_TEXT_FAIL": {
+    "description": "失败推送文案",
+    "type": "string",
+    "default": "{tag} {name} - {message}",
+    "hint": "可用变量：{tag} 状态 / {name} / {message} / {advice} 建议；建议会另起一行"
+  },
+  "PUSH_TEXT_SUMMARY": {
+    "description": "每日汇总文案",
+    "type": "string",
+    "default": "checkin {date}: {ok}/{total} ok",
+    "hint": "可用变量：{date} 日期 / {ok} 成功数 / {total} 总数"
+  },
   "ALLOW_SELF_BIND": {
     "description": "允许陌生用户自助绑定",
     "type": "bool",
