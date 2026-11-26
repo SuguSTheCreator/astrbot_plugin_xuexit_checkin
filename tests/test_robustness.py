@@ -98,5 +98,147 @@ class TestStateStoreRobustness(unittest.TestCase):
         self.assertEqual(StateStore(self.path).load(), {})
 
 
+class TestBestEffortWrites(unittest.TestCase):
+    """记账写入失败不能把已经成功的结论翻成失败。"""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp()
+
+    def test_accounts_save_best_effort_swallows_and_records(self):
+        store = AccountStore(Path(self.dir) / "accounts.json")
+        store.bind("k", name="甲", cookie="_uid=1")
+        # 把路径换成目录，写入必然失败
+        store.path = Path(self.dir)
+        self.assertFalse(store.save_best_effort())
+        self.assertTrue(store.last_write_error)
+
+    def test_mark_success_does_not_raise_when_write_fails(self):
+        store = AccountStore(Path(self.dir) / "accounts.json")
+        store.bind("k", name="甲", cookie="_uid=1")
+        store.path = Path(self.dir)
+        record = store.mark_success("k", date_str="2026-11-26", stage="submit")
+        self.assertIsNotNone(record)
+        self.assertEqual(record["last_success"], "2026-11-26")
+        self.assertTrue(store.last_write_error)
+
+    def test_set_health_does_not_raise_when_write_fails(self):
+        store = AccountStore(Path(self.dir) / "accounts.json")
+        store.bind("k", name="甲", cookie="_uid=1")
+        store.path = Path(self.dir)
+        self.assertIsNotNone(store.set_health("k", "ok", "fine"))
+        self.assertTrue(store.last_write_error)
+
+    def test_mark_expired_does_not_raise_when_write_fails(self):
+        store = AccountStore(Path(self.dir) / "accounts.json")
+        store.bind("k", name="甲", cookie="_uid=1")
+        store.path = Path(self.dir)
+        self.assertIsNotNone(store.mark_expired("k"))
+
+    def test_user_initiated_save_still_raises(self):
+        store = AccountStore(Path(self.dir) / "accounts.json")
+        store.path = Path(self.dir)
+        with self.assertRaises(Exception):
+            store.bind("k", name="甲", cookie="_uid=1")
+
+    def test_state_best_effort_swallows_and_records(self):
+        d = os.path.join(self.dir, "isdir")
+        os.makedirs(d, exist_ok=True)
+        store = StateStore(d)
+        self.assertFalse(store.save_best_effort({"a": 1}))
+        self.assertTrue(store.last_write_error)
+
+    def test_state_mark_success_does_not_raise(self):
+        d = os.path.join(self.dir, "isdir2")
+        os.makedirs(d, exist_ok=True)
+        store = StateStore(d)
+        store.mark_success("2026-11-26", {"ok": True})
+        self.assertTrue(store.last_write_error)
+
+    def test_best_effort_clears_error_on_success(self):
+        store = AccountStore(Path(self.dir) / "accounts.json")
+        store.bind("k", name="甲", cookie="_uid=1")
+        store.path = Path(self.dir)
+        store.save_best_effort()
+        self.assertTrue(store.last_write_error)
+        store.path = Path(self.dir) / "accounts.json"
+        self.assertTrue(store.save_best_effort())
+        self.assertEqual(store.last_write_error, "")
+
+
+class TestAuditFailureVisibility(unittest.TestCase):
+    def test_write_failure_is_counted_not_silent(self):
+        from audit import AuditLog
+
+        d = tempfile.mkdtemp()
+        target = Path(d) / "isdir"
+        target.mkdir()
+        log = AuditLog(target)
+        self.assertFalse(log.write("consent"))
+        self.assertEqual(log.write_failures, 1)
+        self.assertTrue(log.last_error)
+        self.assertFalse(log.write("consent"))
+        self.assertEqual(log.write_failures, 2)
+
+    def test_write_success_keeps_zero_failures(self):
+        from audit import AuditLog
+
+        d = tempfile.mkdtemp()
+        log = AuditLog(Path(d) / "audit.jsonl")
+        self.assertTrue(log.write("consent"))
+        self.assertEqual(log.write_failures, 0)
+        self.assertEqual(log.last_error, "")
+
+
+class TestContactsRobustness(unittest.TestCase):
+    class _Plugin:
+        def __init__(self, data_dir):
+            self._data_dir = data_dir
+
+    @staticmethod
+    def _webui():
+        """webui.py 用的是相对导入，必须挂在一个包下面才能 import。"""
+        import importlib
+        import sys
+        import types
+
+        root = str(Path(__file__).resolve().parent.parent)
+        name = "_xuexit_under_test"
+        if name not in sys.modules:
+            pkg = types.ModuleType(name)
+            pkg.__path__ = [root]
+            sys.modules[name] = pkg
+        return importlib.import_module(name + ".webui")
+
+    def setUp(self):
+        webui = self._webui()
+        self._contacts_path = webui._contacts_path
+        self._load_contacts = webui._load_contacts
+        self.dir = tempfile.mkdtemp()
+        self.plugin = self._Plugin(self.dir)
+        self.path = self._contacts_path(self.plugin)
+
+    def test_missing_file_is_clean(self):
+        self.assertEqual(self._load_contacts(self.plugin), {})
+        self.assertEqual(self.plugin._contacts_error, "")
+
+    def test_corrupt_file_is_quarantined_and_reported(self):
+        self.path.write_text("{ trunc", encoding="utf-8")
+        self.assertEqual(self._load_contacts(self.plugin), {})
+        self.assertTrue(self.plugin._contacts_error)
+        self.assertTrue(self.plugin._contacts_quarantined)
+        self.assertTrue(os.path.exists(self.plugin._contacts_quarantined))
+        self.assertFalse(self.path.exists())
+
+    def test_non_object_is_reported(self):
+        self.path.write_text("[]", encoding="utf-8")
+        self.assertEqual(self._load_contacts(self.plugin), {})
+        self.assertIn("格式不对", self.plugin._contacts_error)
+
+    def test_good_file_roundtrip(self):
+        self.path.write_text('{"a":"甲"}', encoding="utf-8")
+        self.assertEqual(self._load_contacts(self.plugin), {"a": "甲"})
+        self.assertEqual(self.plugin._contacts_error, "")
+
+
 if __name__ == "__main__":
     unittest.main()

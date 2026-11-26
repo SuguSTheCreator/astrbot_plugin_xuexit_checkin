@@ -475,6 +475,8 @@ background-image:linear-gradient(90deg,rgba(200,150,60,.16),transparent 42%),lin
       <div class="hint" style="margin-bottom:10px">
         每个 ID 左边的「备注」框可以写名字（比如「我」「张三」），只影响显示，不影响权限。
       </div>
+      <div id="contactsWarn" style="display:none;margin-bottom:10px;padding:10px 12px;border-radius:10px;
+           background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.35);color:#ffb4b4;font-size:13px"></div>
 
       <div style="font-size:13px;font-weight:600;color:#c9d6ea;margin:6px 0 4px">① 主账号（和你同权：能管人、能打卡、能解绑）</div>
       <div style="font-size:13.5px;color:var(--sub);margin-bottom:10px">
@@ -773,6 +775,17 @@ function render(){
   }
   renderAudit(state.audit || []);
   if(el("auditCount")) el("auditCount").textContent = (state.audit_count || 0) + " 条";
+  const cw = el("contactsWarn");
+  if(cw){
+    if(state.contacts_error){
+      cw.style.display = "block";
+      cw.textContent = "备注文件异常：" + state.contacts_error
+        + "　为免丢数据，改备注已被拒绝。请到「⑤ 自检」看处理办法。";
+    }else{
+      cw.style.display = "none";
+      cw.textContent = "";
+    }
+  }
   if(el("pushOk")) el("pushOk").value = state.push_text_ok || "";
   if(el("pushFail")) el("pushFail").value = state.push_text_fail || "";
   if(el("pushSummary")) el("pushSummary").value = state.push_text_summary || "";

@@ -6,9 +6,13 @@
 """
 from __future__ import annotations
 
+import logging
+import os
 import time
 
 from .policy import matrix as policy_matrix
+
+logger = logging.getLogger(__name__)
 
 #: 数据处理说明的版本号；文案改了就往后挪，面板据此提示「需要重新确认」
 CONSENT_VERSION = "2026-11-24.1"
@@ -45,12 +49,41 @@ def _contacts_path(plugin):
 
 
 def _load_contacts(plugin):
+    """读备注文件。坏了要留证据并报告，不能静默返回空。
+
+    静默返回空最危险：调用方拿着 {} 再写回去，会把原文件里其余备注全冲掉。
+    所以这里把原因记在 plugin._contacts_error 上，写入前必须先看它。
+    """
     import json
 
-    try:
-        return json.loads(_contacts_path(plugin).read_text(encoding="utf-8"))
-    except Exception:
+    path = _contacts_path(plugin)
+    plugin._contacts_error = ""
+    plugin._contacts_quarantined = ""
+    if not path.exists():
         return {}
+
+    def _bad(reason, move):
+        plugin._contacts_error = reason
+        if move:
+            try:
+                target = path.with_name(
+                    path.name + ".corrupt-" + time.strftime("%Y%m%d-%H%M%S"))
+                os.replace(path, target)
+                plugin._contacts_quarantined = str(target)
+            except OSError:
+                pass
+        logger.warning("[xuexit] %s", reason)
+        return {}
+
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as exc:
+        return _bad("备注文件不是合法 JSON：" + str(exc), True)
+    except OSError as exc:
+        return _bad("备注文件读不动：" + str(exc), False)
+    if not isinstance(data, dict):
+        return _bad("备注文件格式不对（顶层不是对象）", True)
+    return data
 
 
 def _ok(data=None, message=""):
@@ -76,6 +109,7 @@ class SettingsApi:
                 "admins": admins,
                 "admin_ids": list(plugin.config.get("ADMIN_IDS", []) or []),
                 "contacts": _load_contacts(plugin),
+                "contacts_error": getattr(plugin, "_contacts_error", ""),
                 "members": list(plugin.config.get("MEMBERS", []) or []),
                 "member_all": bool(plugin.config.get("MEMBER_ALL", True)),
                 "summary_umos": summary,
@@ -180,13 +214,21 @@ class SettingsApi:
                 if not key:
                     return _fail("缺少标识")
                 data = _load_contacts(self.plugin)
+                if getattr(self.plugin, "_contacts_error", ""):
+                    # 读不出来就绝不覆盖：否则一次改备注会冲掉其余全部备注
+                    return _fail("备注文件异常，已拒绝写入以免丢数据："
+                                 + self.plugin._contacts_error)
                 if name:
                     data[key] = name
                 else:
                     data.pop(key, None)
                 path = _contacts_path(self.plugin)
                 path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+                try:
+                    path.write_text(json.dumps(data, ensure_ascii=False, indent=2),
+                                    encoding="utf-8")
+                except OSError as exc:
+                    return _fail("备注写入失败：" + str(exc))
                 try:
                     path.chmod(0o600)
                 except OSError:
@@ -694,9 +736,18 @@ class SettingsApi:
                 detail = load_error
                 if quarantined:
                     detail += "；坏文件已留证据：" + Path(quarantined).name
+                detail += "。处理：重新扫码绑定，或把该文件改回 accounts.json 后重启"
                 add("账号文件", "error", detail)
             else:
                 add("账号文件", "ok", "可读，结构正常")
+
+            write_error = getattr(store, "last_write_error", "")
+            if write_error:
+                add("账号记账", "error",
+                    "打卡结论不受影响，但时间/体检记不进去：" + write_error
+                    + "。查磁盘空间与目录权限")
+            else:
+                add("账号记账", "ok", "可写入")
 
             broken = int(getattr(store, "decrypt_failed", 0) or 0)
             invalid = int(getattr(store, "invalid_records", 0) or 0)
@@ -709,6 +760,37 @@ class SettingsApi:
                 add("账号数据", "error", "；".join(parts))
             else:
                 add("账号数据", "ok", "全部可解密，结构正常")
+
+        _load_contacts(plugin)
+        contacts_error = getattr(plugin, "_contacts_error", "")
+        if contacts_error:
+            detail = contacts_error
+            moved = getattr(plugin, "_contacts_quarantined", "")
+            if moved:
+                detail += "；坏文件已留证据：" + Path(moved).name
+            detail += "。为免丢数据，改备注已被拒绝；修好文件后再改"
+            add("备注文件", "error", detail)
+        else:
+            add("备注文件", "ok", "可读（没有备注也算正常）")
+
+        audit = getattr(plugin, "audit", None)
+        if audit is not None:
+            failures = int(getattr(audit, "write_failures", 0) or 0)
+            if failures:
+                add("留痕可写", "error",
+                    "写失败 %d 次，最近原因：%s。留痕没记上，查磁盘与权限"
+                    % (failures, getattr(audit, "last_error", "")))
+            elif not bool(config.get("AUDIT_ENABLED", True)):
+                add("留痕可写", "warn", "留痕开关关着，操作不会被记录")
+            else:
+                add("留痕可写", "ok", "可写入")
+
+        if str(config.get("FORM_URL_SOURCE", "") or "").strip():
+            source_error = getattr(plugin, "_form_source_error", "")
+            if source_error:
+                add("远程链接状态", "warn", source_error + "（会每次打卡都重查一次）")
+            else:
+                add("远程链接状态", "ok", "上次检查时间可读写")
 
         accepted = bool(config.get("CONSENT_ACCEPTED", True))
         at = str(config.get("CONSENT_AT", "") or "")

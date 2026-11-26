@@ -1,12 +1,17 @@
 """操作留痕：append-only JSONL。
 
 设计取向：留痕失败不能挡住主流程——所有异常吞掉并返回 False。
+但「吞掉」不等于「不说」：失败会记日志并累计计数，自检据此标红，
+否则就变成「以为记了其实没记」的空壳留痕。
 超过 MAX_BYTES 轮转成 .1，只留最近一代（自用场景够用）。
 """
 import json
+import logging
 import os
 import time
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 #: 单文件上限，超过就轮转
 MAX_BYTES = 512 * 1024
@@ -15,6 +20,9 @@ MAX_BYTES = 512 * 1024
 class AuditLog:
     def __init__(self, path):
         self.path = Path(path)
+        #: 写失败次数与最近原因；自检读它们
+        self.write_failures = 0
+        self.last_error = ""
 
     def write(self, action, actor="system", target="", detail="", ok=True):
         """记一条。永不抛异常。"""
@@ -34,8 +42,15 @@ class AuditLog:
                 os.chmod(self.path, 0o600)
             except OSError:
                 pass
+            self.last_error = ""
             return True
-        except Exception:
+        except Exception as exc:
+            self.write_failures += 1
+            self.last_error = str(exc)
+            # 限频：第 1 次和每 20 次说一遍，别把日志刷爆
+            if self.write_failures == 1 or self.write_failures % 20 == 0:
+                logger.warning("[xuexit] 留痕写入失败 %d 次，最近原因：%s",
+                               self.write_failures, exc)
             return False
 
     def _rotate(self):

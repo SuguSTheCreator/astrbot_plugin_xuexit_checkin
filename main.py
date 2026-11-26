@@ -280,17 +280,26 @@ class XuexitCheckinPlugin(Star):
 
     def _form_source_state(self):
         path = self._data_dir / "form_source.json"
+        self._form_source_error = ""
         try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+        except FileNotFoundError:
+            return {}
+        except Exception as exc:
+            # 读不到「上次检查时间」会导致每次打卡都去拉远程链接，必须说出来
+            self._form_source_error = "远程链接状态读不出来：" + str(exc)
+            logger.warning("[xuexit] %s", self._form_source_error)
             return {}
 
     def _save_form_source_state(self, data):
         try:
             path = self._data_dir / "form_source.json"
             path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-        except Exception:
-            pass
+            self._form_source_error = ""
+        except Exception as exc:
+            self._form_source_error = "远程链接状态写不进去：" + str(exc)
+            logger.warning("[xuexit] %s（下次会重新检查远程链接）", self._form_source_error)
 
     def _maybe_refresh_form_url(self, force=False):
         """从远程文本里读表单链接；变了就自动换参数。

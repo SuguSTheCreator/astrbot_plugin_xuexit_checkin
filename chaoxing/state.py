@@ -1,13 +1,18 @@
 """本地状态：记录是否已提交、最近一次结果（防重复提交）。"""
 import json
+import logging
 import os
 
 from .models import beijing_now
+
+logger = logging.getLogger(__name__)
 
 
 class StateStore:
     def __init__(self, path):
         self.path = path or "state.json"
+        #: 最近一次记账写入失败的原因；空串表示正常
+        self.last_write_error = ""
 
     def load(self):
         if not self.path or not os.path.exists(self.path):
@@ -26,9 +31,27 @@ class StateStore:
         if folder and not os.path.isdir(folder):
             os.makedirs(folder, exist_ok=True)
         tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(data, fh, ensure_ascii=False, indent=2)
-        os.replace(tmp, self.path)
+        try:
+            with open(tmp, "w", encoding="utf-8") as fh:
+                json.dump(data, fh, ensure_ascii=False, indent=2)
+            os.replace(tmp, self.path)
+        finally:
+            if os.path.exists(tmp):
+                try:
+                    os.unlink(tmp)
+                except OSError:
+                    pass
+
+    def save_best_effort(self, data):
+        """记账式写入：失败只记录，不抛。语义同 AccountStore.save_best_effort。"""
+        try:
+            self.save(data)
+            self.last_write_error = ""
+            return True
+        except Exception as exc:
+            self.last_write_error = str(exc)
+            logger.warning("[xuexit] 状态文件写入失败（不影响本次结论）：%s", exc)
+            return False
 
     def already_done(self, date_str):
         return bool(self.load().get("last_success_date") == date_str)
@@ -38,4 +61,4 @@ class StateStore:
         data["last_success_date"] = date_str
         data["last_result"] = result
         data["updated_at"] = beijing_now().strftime("%Y-%m-%d %H:%M:%S")
-        self.save(data)
+        self.save_best_effort(data)

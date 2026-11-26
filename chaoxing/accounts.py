@@ -31,6 +31,8 @@ class AccountStore:
         self.quarantined = ""
         self.decrypt_failed = 0
         self.invalid_records = 0
+        #: 最近一次「记账写入」失败的原因；空串表示正常。自检会读它。
+        self.last_write_error = ""
         self.load()
 
     # ---------- 加密 ----------
@@ -180,6 +182,22 @@ class AccountStore:
             pass
         return self
 
+    def save_best_effort(self):
+        """记账式写入：失败只记录，不抛。
+
+        用在「事情已经做完了，只是补记一笔」的场景（打卡成功后记时间、记体检）。
+        这时候抛异常会把已经成功的结论翻成失败，比丢一条记录更糟。
+        用户主动发起的写入（绑定、改 Cookie、撤回）仍然用 save()，失败必须报出来。
+        """
+        try:
+            self.save()
+            self.last_write_error = ""
+            return True
+        except Exception as exc:
+            self.last_write_error = str(exc)
+            logger.warning("[xuexit] 账号记账写入失败（不影响本次结论）：%s", exc)
+            return False
+
     @property
     def crypto_enabled(self):
         """Cookie 是否真的在加密存放（环境缺 cryptography 时会退化成明文）。"""
@@ -242,7 +260,7 @@ class AccountStore:
         if stage:
             record["last_stage"] = stage
             record["last_run_at"] = _now()
-        self.save()
+        self.save_best_effort()
         return record
 
     def set_owner(self, key, owner):
@@ -264,7 +282,7 @@ class AccountStore:
             "message": str(message or "")[:120],
             "at": _now(),
         }
-        self.save()
+        self.save_best_effort()
         return record
 
     def mark_expired(self, key):
@@ -272,7 +290,7 @@ class AccountStore:
         if record is None:
             return None
         record["status"] = "expired"
-        self.save()
+        self.save_best_effort()
         return record
 
     def find_by_uid(self, uid):
