@@ -1,4 +1,4 @@
-# 留痕与门卫（v0.5.0）
+# 留痕与门卫（v0.6.0）
 
 这份文档说明两件从界面看不出来的事：**谁会看到什么**、**什么时候留下证据**。
 写它的原因是——面板上的「已同意」曾经是空壳：默认值就是 true，从来没人点过，
@@ -19,9 +19,18 @@
 | `consent_backfill` | 启动时发现「已同意但无时间」 | 说明这次是补记，不是用户操作 |
 | `consent` | 面板上勾选 / 取消 | accept / withdraw |
 | `config_change` | 保存设置 | 改了哪几个键、改成了什么 |
-| `checkin_manual` | 手动打卡 | 账号名与结果 |
+| `apply_form_url` | 面板粘贴表单链接并解析 | 解析出的 formId 与 enc 前缀 |
+| `check_form_source` | 检查远程表单链接 | 读到的链接 |
+| `form_url_refresh` | 远程链接变化并自动换参数 | 新的 formId |
+| `set_owner` | 设置账号归属 openid | 账号与归属 |
+| `set_contact` | 给名单里的 ID 写备注 | 标识与备注 |
+| `health_check` | 面板点「体检」（只读） | 账号与结论 |
+| `dry_run` | 面板点「试跑」（不提交） | 账号与结论 |
+| `run_now` | 面板点「立即」（真提交） | 账号与分类结果 |
+| `checkin_manual` | 聊天里手动打卡 | 账号名与结果 |
 | `unbind` | 解绑 | 账号名 |
-| `gate_deny` | 门卫拦下非主账号的命令 | 谁、哪条命令、为什么拦 |
+| `purge_user` | 面板「撤回」删除账号 | 账号名与清掉的状态文件 |
+| `gate_deny` | 门卫拦下消息 | 谁、哪条命令、为什么拦 |
 | `probe_tunnel` | 每次自检 | 探测地址与结果 |
 | `self_check` | 每次自检 | 异常 / 注意 / 正常各几条 |
 
@@ -55,7 +64,8 @@
 
 ```python
 identity(umo, sender_id, admin_umos, admin_ids, member_umos) -> (role, reason)
-gate(text, role, allow_self_bind=False) -> {allow, command, role, reason}
+gate(text, role, allow_self_bind=False, member_allow_all=False, bare=False)
+    -> {allow, command, role, reason}
 ```
 
 角色：
@@ -63,21 +73,30 @@ gate(text, role, allow_self_bind=False) -> {allow, command, role, reason}
 | role | 判定条件 |
 |---|---|
 | `admin` | openid 命中 `ADMIN_IDS`，或会话命中 `ADMIN_UMOS`；两个名单都空时视为「开放模式」（危险，自检会标红） |
-| `member` | 会话对应一个已绑定的超星账号 |
+| `member` | openid 或会话命中 `MEMBERS`（面板「⑦ 权限与通知」里手工加的名单） |
 | `guest` | 其他一切人 |
+
+判定顺序：**openid 优先于会话**——openid 是「人」，umo 是「一段对话」。
 
 放行规则：
 
-| 命令 | admin | member | guest |
-|---|---|---|---|
-| `/status` `/whoami` `/checkin_bind` | 放行 | 放行 | 放行 |
-| `/bind` | 放行 | `ALLOW_SELF_BIND` 开才放行 | 同左 |
-| `/checkin` `/login` `/unbind` `/notify_test` | 放行 | 拦下 | 拦下 |
-| 普通聊天 | 放行 | 拦下 | 拦下 |
+| 消息 | admin | member（`MEMBER_ALL` 开） | member（关） | guest |
+|---|---|---|---|---|
+| `/status` `/whoami` `/checkin_bind` | 放行 | 放行 | 放行 | 放行 |
+| `/bind` | 放行 | 放行 | `ALLOW_SELF_BIND` 开才放行 | 同左 |
+| `/checkin` `/login` `/unbind` `/notify_test` | 放行 | 放行 | 拦下 | 拦下 |
+| 普通聊天 | 放行 | 放行 | 拦下 | 拦下 |
 
-**已知边界**：member 和 guest 在放行规则上目前完全一样——因为插件没有「成员」概念，
-只有「已绑定账号」。`member` 这个角色目前只用于将来区分，以及自检表格里的可读性。
-真正区分「同学」和「陌生人」需要邀请码之类的机制，尚未实现。
+两个开关：
+
+- `ALLOW_SELF_BIND`（默认 **关闭**）：控制非主账号能不能自助 `/bind`。
+- `MEMBER_ALL`（默认 **打开**）：打开时成员与主账号同权；关掉后成员只剩三条只读指令。
+
+**已知边界**：
+
+- 「成员」是**手工名单**，不是「已绑定账号」的同义词。绑了账号但没进名单的人，仍按 `guest` 处理。
+- 没有邀请码机制：名单靠主账号在面板里手工维护。
+- 两个主账号名单都为空时进入「开放模式」，谁都能用全部命令——自检会标红提醒。
 
 ## 4. 自助检（面板「自检」）
 

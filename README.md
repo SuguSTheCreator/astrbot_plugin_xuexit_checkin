@@ -79,11 +79,34 @@
 
 | 文档 | 讲什么 |
 |---|---|
+| [docs/DEPLOY.md](docs/DEPLOY.md) | **部署与接入**：三层结构、三条路线、QQ 接线、排查表 |
 | [docs/HOWTO-CAPTURE.md](docs/HOWTO-CAPTURE.md) | 参数获取说明（三条路，含参数对照表） |
 | [CREDITS.md](CREDITS.md) | 参考过的开源项目与许可证 |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | 收集什么、存在哪、怎么删 |
 | [docs/DISCLAIMER.md](docs/DISCLAIMER.md) | 使用边界、风险、免责 |
 | [docs/AUDIT-AND-GATE.md](docs/AUDIT-AND-GATE.md) | 权限判定与操作留痕的实现说明 |
+
+---
+
+## 它是怎么跑起来的
+
+```text
+QQ 客户端 / 协议端  ──消息──▶  AstrBot  ──调用──▶  本插件
+（收发 QQ 消息）              （大脑：路由 + 面板）    （技能：取表单、提交、记状态）
+```
+
+**AstrBot 自己不会登录 QQ**，它需要一个消息平台适配器；本插件只是它的一个技能，不碰 QQ 协议。
+
+### 先选路线，别一上来就装全套
+
+| 路线 | 适合谁 | 耗时 | 要 QQ 机器人吗 |
+|---|---|---|---|
+| **A. 命令行 + Webhook** | 只给自己打卡 | **10 分钟** | **不要**（结果推微信） |
+| **B. AstrBot + QQ 官方机器人** | 想在 QQ 里收结果 | 30 分钟 | 要（官方） |
+| **C. AstrBot + OneBot 协议端** | 想要完整私聊/群聊体验 | 1–2 小时 | 要（第三方） |
+
+> **只是自己打卡，选 A。** 下面的「快速开始」讲的是 B / C。
+> 三条路线的完整接线步骤、端口、排查表见 **[docs/DEPLOY.md](docs/DEPLOY.md)**。
 
 ---
 
@@ -133,14 +156,24 @@ docker run -d --name astrbot -p 6185:6185 \
 4. 在 QQ 里私聊这个机器人发一句话，能收到回复就算通了
 ```
 
-**B. OneBot 协议端**（NapCat / LLOneBot 等）
+**B. OneBot v11 协议端**（NapCat 等）
+
+**方向是反的：AstrBot 做服务端，协议端主动连过来。**
 
 ```text
-1. 本机跑一个 QQ 客户端 + 协议端，开 WebSocket，端口 3001
-2. AstrBot → 消息平台 → 选 aiocqhttp → ws://127.0.0.1:3001
+1. AstrBot WebUI → 机器人 → 创建机器人 → OneBot v11
+     反向 WebSocket 主机 0.0.0.0，端口 6199（默认）
+2. 协议端（如 NapCat）→ 网络配置 → 新建 → WebSockets 客户端
+     URL 填 ws://127.0.0.1:6199/ws
+3. AstrBot → 数据与日志 → 日志，出现「适配器已连接」即成功
 ```
 
-> **只想打卡、不想要机器人？** 直接用下面的「用法二：命令行」，完全不碰 QQ。
+> 完整步骤、Docker 网络写法、端口说明见 [docs/DEPLOY.md](docs/DEPLOY.md) 第 5 节。
+>
+> ⚠️ 第三方协议端不是腾讯官方实现，用它登录的 QQ 号有被限制的风险：
+> **请用专门的备用号，不要挂主号**；也不要在公网暴露协议端端口。
+
+> **只想打卡、不想要机器人？** 用下面的「用法二：命令行」+ Webhook，完全不碰 QQ。
 
 ### 4. 填表单参数
 
@@ -165,12 +198,28 @@ docker run -d --name astrbot -p 6185:6185 \
 「登录通道」黄色只影响扫码，不影响已经绑好的账号
 ```
 
-### 7. 加同学（可选）
+### 7. 把自己设成主账号
+
+机器人默认谁都不认，得先告诉它「你是我」。
+
+```text
+1. 用你的 QQ 私聊机器人，发：/checkin_bind
+2. 它回一串会话标识（UMO），形如 qqbot:FriendMessage:XXXX
+3. 复制 → 面板「⑦ 权限与通知」→「主账号 / 会话」→ 添加
+```
+
+> 也可以用 `/whoami` 拿 openid 填到「主账号 / openid」——换群、换私聊都认得你。
+> 两个名单都空时插件处于「开放模式」，谁都能用全部命令，自检会标红。
+
+### 8. 加同学（可选）
 
 ```text
 ⑥ 用户 → 扫码添加用户 → 让本人扫
-⑦ 权限与通知 → 决定他能不能用指令、结果推给谁
+⑦ 权限与通知 → 把他的 openid / UMO 加进「成员」，决定他能不能用指令
+③ 结果发给谁 → 填他的会话地址，他才能收到自己的结果
 ```
+
+> 默认 `ALLOW_SELF_BIND` 关闭，陌生人不能自己绑定。
 
 ---
 
@@ -181,7 +230,7 @@ docker run -d --name astrbot -p 6185:6185 \
 ```text
 1. AstrBot 面板 → 插件市场 → 搜索「健康日报自动填写」→ 安装
 2. 重载插件
-3. 面板左侧「扩展功能」→「超星打卡设置」→ 按页面提示操作
+3. 面板左侧「扩展功能」→「健康日报设置」→ 按页面提示操作
 ```
 
 ### 用法二：命令行（无机器人也能跑）
@@ -208,6 +257,14 @@ python standalone/cli.py --config config.local.json --dry-run
 
 第二条是兜底：已提交的会自动跳过。
 
+**把结果推到微信**：在配置里填 `webhook_url`，支持 Server酱 / PushPlus / Bark / 自定义 URL。
+
+```json
+{ "webhook_url": "https://sctapi.ftqq.com/<你的SENDKEY>.send" }
+```
+
+这条路线**不需要 AstrBot、不需要 QQ 机器人**，10 分钟能配完。详见 [docs/DEPLOY.md](docs/DEPLOY.md) 第 3 节。
+
 ---
 
 ## 配置
@@ -226,9 +283,12 @@ python standalone/cli.py --config config.local.json --dry-run
 
 完整步骤见 **[docs/HOWTO-CAPTURE.md](docs/HOWTO-CAPTURE.md)**，最快 2 分钟：
 
-1. 打开表单填写页，**地址栏**里就有 `formId` / `enc` / `fidEnc` / `stateFid`；
-2. F12 → Network → 随便点一个请求 → 复制 `Cookie` 整行；
-3. 填进配置，先跑一次 `--dry-run` 验证。
+1. 学习通 App →「已提交的记录」→ 点开那条日报 → 右上角「…」→ 分享 → 复制链接；
+2. 面板「③ 运行设置」→ 粘贴链接 →「解析并保存」，四个参数自动填好；
+3. 「⑥ 用户」→ 扫码添加用户（登录状态自动加密保存，**不用手抄 Cookie**）；
+4. 打开「演练模式」→ 点「试跑」验证，通过后关掉演练模式。
+
+> 只有**命令行模式**（没有面板）才需要自己填 `cookie` 字段。
 
 `uuid` / `submit_version` / `form_template` 可以留空——开着「自动同步表单」时会自己取。
 
@@ -236,7 +296,7 @@ python standalone/cli.py --config config.local.json --dry-run
 
 ## 登录助手（仅云服务器需要）
 
-超星会拦截机房 IP，所以**装在云服务器上的 AstrBot 打不开登录页**，生成不了二维码。
+数据中心（云服务器）的出口 IP 通常无法通过平台对登录环境的常规校验，因此**装在云服务器上的 AstrBot 可能打不开登录页**，生成不了二维码。
 
 解决办法：在你自己的电脑上运行「登录助手」，临时把家庭宽带借给服务器用一次。
 
@@ -257,15 +317,26 @@ python standalone/cli.py --config config.local.json --dry-run
 
 ## 命令
 
-| 命令 | 谁能用 | 作用 |
-|---|---|---|
-| `/bind` | 所有人 | 扫码绑定自己的超星账号 |
-| `/status` | 所有人 | 查看自己的绑定状态 |
-| `/checkin_bind` | 所有人 | 打印当前会话标识（拿 UMO 用） |
-| `/whoami` | 所有人 | 打印 umo / openid，用于配主账号 |
-| `/login 名字` | 主账号 | 代某个同学生成二维码 |
-| `/checkin` | 主账号 | 立刻补打一次 |
-| `/unbind 名字` | 主账号 | 解绑 |
+判定只有一处实现：`policy.py` 的 `identity()` + `gate()`，面板「门卫矩阵」展示的就是它的输出。
+
+| 命令 | 主账号 | 成员 | 陌生人 |
+|---|---|---|---|
+| `/status` 查看自己的绑定状态 | ✅ | ✅ | ✅ |
+| `/whoami` 打印 umo / openid | ✅ | ✅ | ✅ |
+| `/checkin_bind` 打印当前会话标识 | ✅ | ✅ | ✅ |
+| `/bind` 扫码绑定自己的账号 | ✅ | 开关决定 | 开关决定 |
+| `/login 名字` 为指定账号生成二维码 | ✅ | 开关决定 | ❌ |
+| `/checkin` 立刻补打一次 | ✅ | 开关决定 | ❌ |
+| `/unbind 名字` 解绑 | ✅ | 开关决定 | ❌ |
+| 普通聊天 | ✅ | 开关决定 | ❌（直接丢弃） |
+
+两个开关：
+
+- **`ALLOW_SELF_BIND`（默认关闭）**：关闭时 `/bind` 只有主账号能用，等于对外关门。
+- **`MEMBER_ALL`（成员全部权限）**：打开时成员与主账号同权；关闭时成员只剩上面三条只读指令。
+
+> 「成员」= 面板「⑦ 权限与通知」里手工加入名单的人（openid 或会话都可以）。
+> 不在任何名单里的人一律按陌生人处理。
 
 ---
 
