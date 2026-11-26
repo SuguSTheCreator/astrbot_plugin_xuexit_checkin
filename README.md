@@ -10,7 +10,7 @@
 >
 > 使用前请确认符合你所在学校的规定；因使用产生的后果由使用者承担。
 
-> **兼容性**：适配常见高校「健康日报」类表单（含 XUEXITONG 类表单）。仓库**不附带任何学校的真实参数**，参数需按 [抓包说明](docs/HOWTO-CAPTURE.md) 自行获取。
+> **兼容性**：适配常见高校「健康日报」类表单（含 XUEXITONG 类表单）。仓库**不附带任何学校的真实参数**，参数需按 [参数获取说明](docs/HOWTO-CAPTURE.md) 自行获取。
 
 > ⚠️ **本项目完全免费开源。** 任何在闲鱼、淘宝等平台收费售卖的，均非作者授权；请直接使用本仓库或 AstrBot 插件市场。
 
@@ -79,7 +79,8 @@
 
 | 文档 | 讲什么 |
 |---|---|
-| [docs/HOWTO-CAPTURE.md](docs/HOWTO-CAPTURE.md) | 换成自己学校的参数怎么拿（四条路，难度从低到高） |
+| [docs/HOWTO-CAPTURE.md](docs/HOWTO-CAPTURE.md) | 参数获取说明（三条路，含参数对照表） |
+| [CREDITS.md](CREDITS.md) | 参考过的开源项目与许可证 |
 | [docs/PRIVACY.md](docs/PRIVACY.md) | 收集什么、存在哪、怎么删 |
 | [docs/DISCLAIMER.md](docs/DISCLAIMER.md) | 使用边界、风险、免责 |
 | [docs/AUDIT-AND-GATE.md](docs/AUDIT-AND-GATE.md) | 权限判定与操作留痕的实现说明 |
