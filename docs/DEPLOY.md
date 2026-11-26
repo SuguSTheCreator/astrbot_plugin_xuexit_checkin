@@ -154,7 +154,7 @@ AstrBot 官方文档推荐这条，更稳定，而且**支持扫码一键创建*
 ③ 对方收到推荐后点进去，加机器人为好友
 ```
 
-<img src="screenshots/10-qq-devusers.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/10-qq-devusers.png" width="100%">
 
 > 上图是「开发体验号码设置」页面，QQ 号与头像已打码。
 > 「2 / 20」就是内测名额，**一个机器人最多 20 个人**。

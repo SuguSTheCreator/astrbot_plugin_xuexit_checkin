@@ -22,39 +22,39 @@
 
 **① 数据处理说明** —— 收集什么、不收集什么、存多久、怎么撤回
 
-<img src="docs/screenshots/01-privacy.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/01-privacy.png" width="100%">
 
 **② 使用流程** —— 第一次用照四步走，云端与本机都覆盖
 
-<img src="docs/screenshots/02-flow.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/02-flow.png" width="100%">
 
 **③ 运行设置** —— 表单链接、远程链接、开关、时间
 
-<img src="docs/screenshots/03-settings.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/03-settings.png" width="100%">
 
 **④ 登录助手** —— 只有 AstrBot 装在云服务器时才需要
 
-<img src="docs/screenshots/04-helper.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/04-helper.png" width="100%">
 
 **⑤ 自检** —— 配置、账号、留痕、通道、门卫一次过一遍
 
-<img src="docs/screenshots/05-selfcheck.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/05-selfcheck.png" width="100%">
 
 **⑥ 门卫矩阵** —— 谁 × 哪条命令，和代码里是同一份判定
 
-<img src="docs/screenshots/06-matrix.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/06-matrix.png" width="100%">
 
 **⑦ 用户** —— 每人一份独立状态，四个操作按钮
 
-<img src="docs/screenshots/07-users.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/07-users.png" width="100%">
 
 **⑧ 权限与通知** —— 谁能用、结果发给谁，彼此独立
 
-<img src="docs/screenshots/08-permissions.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/08-permissions.png" width="100%">
 
 **⑨ 成员与推送** —— 成员权限开关、推送会话列表
 
-<img src="docs/screenshots/09-members.png" width="100%">
+<img src="https://raw.githubusercontent.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/assets/screenshots/09-members.png" width="100%">
 
 ---
 
@@ -327,6 +327,47 @@ docker run -d --name astrbot -p 6185:6185 \
 ```
 
 > 默认 `ALLOW_SELF_BIND` 关闭，陌生人不能自己绑定。
+
+---
+
+## 安装与升级
+
+三种安装方式，**升级方式各不相同**，按你当初怎么装的选：
+
+| 当初怎么装的 | 怎么升级 | 说明 |
+|---|---|---|
+| **插件市场** | 面板 → 插件市场 → 该插件「更新」 | 只有我们 bump 了版本号，面板才提示有更新 |
+| **上传 ZIP** | 下载新 Release 的 zip → 面板上传替换 | 不用装 git，见下方下载地址 |
+| **git clone / 手动放目录** | `git pull` → 重启 AstrBot | 手动放的目录没有 git，就重新下载 zip 覆盖 |
+
+### 运行包下载（不含截图与测试，约 0.12 MB）
+
+```text
+https://github.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin/releases/latest
+```
+
+每个 Release 都附一个 `astrbot_plugin_xuexit_checkin-v<版本>.zip`，
+里面只有跑起来需要的文件（源码 + 面板 + 配置模板 + 文档）。
+
+> 仓库本体因为带截图会大一些；**运行包已经把截图、测试、开发配置排除**，
+> 所以体积远小于 AstrBot 插件市场的 16 MB 上限。
+
+### 升级会不会丢配置
+
+不会。配置、账号、状态、留痕都在 AstrBot 的数据目录里，不在插件目录：
+
+```text
+data/config/astrbot_plugin_xuexit_checkin_config.json   ← 配置
+data/plugin_data/astrbot_plugin_xuexit_checkin/         ← 账号 / 状态 / 留痕 / 密钥
+```
+
+覆盖插件目录不动这两处。**但备份时记得连 `secret.key` 一起备**，
+少了它，加密的 Cookie 还原不出来（只能重新扫码）。
+
+#### 配置键改名的情况
+
+新增配置项由 AstrBot 按 schema 自动补默认值；**改过名的旧键**由插件自己搬运
+（`config_migrate.py`），启动时执行一次并记进留痕，不会让你填过的值静默失效。
 
 ---
 

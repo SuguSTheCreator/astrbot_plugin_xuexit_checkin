@@ -17,6 +17,8 @@ jobs:
         run: ruff check .
       - name: mypy（只查核心逻辑，见 mypy.ini）
         run: mypy
+      - name: 运行包体积（插件市场上限 16MB）
+        run: python scripts/package.py
 
   test38:
     runs-on: ubuntu-22.04

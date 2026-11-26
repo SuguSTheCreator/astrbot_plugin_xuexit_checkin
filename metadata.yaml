@@ -6,7 +6,7 @@ desc: |
   结果可推送到 QQ 会话或 Webhook。支持多账号、扫码授权、随机延迟、失败分类与告警。
   本插件不内置任何平台凭据，也不修改平台的安全校验；提交内容与使用场景由使用者自行负责。
   亦可作为命令行工具在 cron 或系统任务计划中运行。
-version: 0.9.0
+version: 0.10.0
 author: SuguSTheCreator
 repo: https://github.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin
 astrbot_version: ">=4.26.0"

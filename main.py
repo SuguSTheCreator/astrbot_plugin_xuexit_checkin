@@ -27,6 +27,7 @@ from .chaoxing.qrlogin import (
     STATE_SCANNED,
     QrLoginSession,
 )
+from .config_migrate import migrate as migrate_config
 from .policy import GUEST_COMMANDS
 from .policy import gate as policy_gate
 from .policy import identity as policy_identity
@@ -84,6 +85,7 @@ class XuexitCheckinPlugin(Star):
         self.store = self._store  # 供 WebUI 层访问
         self.audit = AuditLog(self._data_dir / "audit.jsonl")
         self._normalize_consent()
+        self._migrate_config()
 
     # ---------------- 基础设施 ----------------
     def _resolve_data_dir(self):
@@ -178,6 +180,20 @@ class XuexitCheckinPlugin(Star):
         if not _as_bool(self._get("AUDIT_ENABLED", True), True):
             return False
         return self.audit.write(action, **fields)
+
+    def _migrate_config(self):
+        """配置结构迁移。判定逻辑在 config_migrate.py（纯函数，可测）。"""
+        moved, changed = migrate_config(self.config)
+        if not changed:
+            return
+        try:
+            self.config.save_config()
+        except Exception:
+            logger.warning("[xuexit] 配置版本号写入失败：%s", traceback.format_exc(limit=2))
+            return
+        if moved:
+            logger.info("[xuexit] 配置迁移：%s", "; ".join(moved))
+            self._log("config_migrate", detail="; ".join(moved))
 
     def _normalize_consent(self):
         """同意时间补齐。

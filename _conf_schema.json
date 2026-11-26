@@ -1,4 +1,9 @@
 {
+  "CONFIG_SCHEMA_VERSION": {
+    "description": "配置结构版本（自动维护，请勿手改）",
+    "type": "int",
+    "default": 0
+  },
   "ENABLE": {
     "description": "总开关",
     "type": "bool",
