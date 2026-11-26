@@ -99,20 +99,116 @@ QQ 客户端 / 协议端  ──消息──▶  AstrBot  ──调用──▶ 
 
 ### 先选路线，别一上来就装全套
 
-| 路线 | 适合谁 | 耗时 | 要 QQ 机器人吗 |
-|---|---|---|---|
-| **A. 命令行 + Webhook** | 只给自己打卡 | **10 分钟** | **不要**（结果推微信） |
-| **B. AstrBot + QQ 官方机器人** | 想在 QQ 里收结果 | 30 分钟 | 要（官方） |
-| **C. AstrBot + OneBot 协议端** | 想要完整私聊/群聊体验 | 1–2 小时 | 要（第三方） |
+| 路线 | 适合谁 | 耗时 | 要 QQ 机器人吗 | 实测状态 |
+|---|---|---|---|---|
+| **A. 命令行 + Webhook** | 只给自己打卡 | **10 分钟** | **不要**（结果推微信） | 已实测 |
+| **B. AstrBot + QQ 官方机器人** | 想在 QQ 里收结果、用指令 | 30–60 分钟 | 要（官方） | 已实测 |
+| **C. AstrBot + OneBot 协议端** | 想要完整私聊/群聊体验 | 1–2 小时 | 要（第三方） | **未实测** |
 
-> **只是自己打卡，选 A。** 下面的「快速开始」讲的是 B / C。
-> 三条路线的完整接线步骤、端口、排查表见 **[docs/DEPLOY.md](docs/DEPLOY.md)**。
+**推荐顺序：A → B。C 不推荐新手。**
+
+> **C 的说明**：接线方向、端口、URL 都核对过 AstrBot 官方文档，但作者**没有真的搭一套协议端跑通**。
+> 文档是对的，实操可能有坑；而且第三方协议端非腾讯官方实现，登录的 QQ 号有被限制的风险。
+> **想在 QQ 里用，请走 B。**
+>
+> 三条路线的完整步骤、端口、排查表见 **[docs/DEPLOY.md](docs/DEPLOY.md)**。
 
 ---
 
-## 快速开始
+## 快速开始（路线 A：10 分钟，不用机器人）
 
-> 全程约 10–20 分钟。最短路径：Docker 起 AstrBot → 面板装插件 → 接 QQ → 贴表单链接 → 扫码。
+**只给自己打卡的话，这条最省事**：不装 AstrBot、不装 Docker、不碰 QQ，结果推到微信。
+
+### A1. 装 Python 和依赖
+
+```bash
+# Windows：去 python.org 装 3.8+，安装时勾上 Add to PATH
+# macOS/Linux：一般自带 python3
+python --version
+
+git clone https://github.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin.git
+cd astrbot_plugin_xuexit_checkin
+pip install -r requirements.txt
+```
+
+### A2. 拿表单链接
+
+```text
+学习通 App →「已提交的记录」→ 点开那条日报
+→ 右上角「…」→ 分享 → 复制链接
+→ 发到电脑（微信文件传输助手就行）
+```
+
+> **必须已经手动填过一次**，否则没有历史记录，自动同步拿不到模板。
+
+### A3. 一条命令抠出四个参数
+
+```bash
+python standalone/cli.py --parse-url "粘贴那条链接" --out config.local.json
+```
+
+输出会列出 `form_id` / `enc` / `fid_enc` / `state_fid`，并写进配置。
+缺哪个会直接告诉你（通常是复制成列表页而不是详情页）。
+
+### A4. 扫码登录，不用手抄 Cookie
+
+```bash
+python standalone/cli.py --login --fid 你的学校fid --out config.local.json
+```
+
+```text
+二维码存成 qr.png → 打开它 → 学习通 App 扫 → 手机上点确认
+命令会自动把 Cookie 写进同一个配置文件
+```
+
+> `fid` 就是上一步解析出的 `state_fid`。
+> 云服务器上这一步可能失败（出口 IP 过不了登录环境校验），换本机跑，或见 [helper/README.md](helper/README.md)。
+
+### A5. 补两项，然后验证
+
+编辑 `config.local.json`，补上：
+
+```json
+{
+  "location": "纬度,经度,地址",
+  "webhook_url": "https://sctapi.ftqq.com/<你的SENDKEY>.send"
+}
+```
+
+- `location`：地图右键取坐标，格式 `纬度,经度,地址`
+- `webhook_url`：Server酱 / PushPlus 推微信，Bark 推 iPhone；不填就不推送
+
+```bash
+python standalone/cli.py --config config.local.json --dry-run
+```
+
+看到 `dry-run 通过` 就说明 Cookie 和参数都对了。**演练不产生任何打卡记录。**
+
+### A6. 真跑一次，然后挂定时
+
+```bash
+python standalone/cli.py --config config.local.json
+```
+
+Linux / macOS crontab：
+
+```cron
+5 8 * * *  cd /path/to/repo && python3 standalone/cli.py --config config.local.json >> run.log 2>&1
+40 8 * * * cd /path/to/repo && python3 standalone/cli.py --config config.local.json >> run.log 2>&1
+```
+
+Windows：任务计划程序 → 新建基本任务 → 每天 08:05 → 程序填 `python`，
+参数填 `standalone/cli.py --config config.local.json`，起始于填仓库目录。
+
+第二条是兜底：已提交的会自动跳过，不会重复提交。
+
+**到这里就完事了。** 想加人见「用法二：命令行」的多账号模式。
+
+---
+
+## 快速开始（路线 B：AstrBot + QQ 机器人）
+
+> 全程约 30–60 分钟。Docker 起 AstrBot → 面板装插件 → 接 QQ → 贴表单链接 → 扫码。
 
 ### 0. 先确认你有这些
 

@@ -1,5 +1,30 @@
 # 更新记录
 
+## 0.9.0
+
+路线 A（命令行 + Webhook）原来只是文档上说得轻松，实际做不到：解析链接和扫码登录都只有面板有，
+命令行用户得手抄 Cookie、手抄四个参数。现在补齐了。
+
+**新增**
+
+- `standalone/cli.py --parse-url <链接> --out config.local.json`：一条命令抠出四个参数并写进配置。
+  复用面板那套别名（`chaoxing/formlink.py`），不另写一份。
+- `standalone/cli.py --login --fid <fid> --out config.local.json`：扫码登录，二维码存成 qr.png，
+  确认后 Cookie 自动写进同一个文件。复用插件侧的 `QrLoginSession`。
+- 写入配置采用合并语义：只覆盖本次解析出的字段，不动用户填过的 location / webhook_url。
+
+**文档**
+
+- README 快速开始改成 **A 路线优先**，新增 A1–A6 完整走法（装 Python → 拿链接 → 抠参数 →
+  扫码 → 补两项 → 挂定时），Windows 任务计划与 crontab 都给了。
+- 路线表新增「实测状态」列：**C（OneBot 协议端）明确标注未实测**，推荐顺序改为 A → B。
+- DEPLOY.md 同步：路线 A 换成新命令，C 标注未实测。
+
+**测试**
+
+150 → 156 个用例（解析命令写盘、缺参数返回 1、合并不覆盖已有字段、空值跳过、坏文件不炸）。
+
+
 ## 0.8.0
 
 装上 ruff 与 mypy 做了一轮体检，抓出来的都不是风格问题：

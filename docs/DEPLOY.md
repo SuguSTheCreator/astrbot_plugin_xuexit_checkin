@@ -36,11 +36,14 @@
 
 ## 2. 先选路线
 
-| 路线 | 适合谁 | 大概耗时 | 要不要 QQ 机器人 |
-|---|---|---|---|
-| **A. 只要打卡结果** | 自己一个人用 | 10 分钟 | **不要** |
-| **B. AstrBot + QQ 官方机器人** | 想在 QQ 里收结果、用指令 | 30 分钟 | 要（官方） |
-| **C. AstrBot + OneBot 协议端** | 想要私聊/群聊完整体验 | 1–2 小时 | 要（第三方） |
+| 路线 | 适合谁 | 大概耗时 | 要不要 QQ 机器人 | 实测状态 |
+|---|---|---|---|---|
+| **A. 只要打卡结果** | 自己一个人用 | 10 分钟 | **不要** | 已实测 |
+| **B. AstrBot + QQ 官方机器人** | 想在 QQ 里收结果、用指令 | 30–60 分钟 | 要（官方） | 已实测 |
+| **C. AstrBot + OneBot 协议端** | 想要私聊/群聊完整体验 | 1–2 小时 | 要（第三方） | **未实测** |
+
+> **C 未实测**：方向、端口、URL 核对过 AstrBot 官方文档，但作者没有真的搭一套协议端跑通。
+> 想在 QQ 里用请走 B。
 
 > **只是自己打卡，选 A 就够了。** 命令行 + Webhook 把结果推到微信，体验和机器人几乎等价。
 
@@ -48,21 +51,28 @@
 
 ## 3. 路线 A：命令行 + Webhook（最轻）
 
-不需要 AstrBot，不需要 QQ 机器人。
+不需要 AstrBot，不需要 QQ 机器人，**也不用手抄 Cookie**。
 
 ```bash
-pip install requests cryptography
+pip install -r requirements.txt
 
-# 1. 准备配置
-cp config.example.json config.local.json
-# 编辑 config.local.json：填表单四参数、cookie、location
+# 1. 从 App 分享出来的表单链接抠参数
+python standalone/cli.py --parse-url "粘贴链接" --out config.local.json
 
-# 2. 验证（不提交）
+# 2. 扫码登录，Cookie 自动写进同一个文件
+python standalone/cli.py --login --fid 你的state_fid --out config.local.json
+
+# 3. 手动补 location 与 webhook_url（见下），然后验证
 python standalone/cli.py --config config.local.json --dry-run
 
-# 3. 真跑一次
+# 4. 真跑一次
 python standalone/cli.py --config config.local.json
 ```
+
+扫码那步会把二维码存成 `qr.png`，打开它用学习通 App 扫，手机上点确认即可。
+云服务器上可能失败（出口 IP 过不了登录环境校验），换本机跑或见第 7 节。
+
+> 逐步截图版见 README 的「快速开始（路线 A）」。
 
 ### 把结果推到微信
 
