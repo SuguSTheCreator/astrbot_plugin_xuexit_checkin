@@ -1,5 +1,6 @@
 """一键执行：取 checkCode -> 构造表单 -> 提交 -> 记录状态。"""
 import json
+import logging
 import time
 
 from .client import ChaoxingClient
@@ -13,6 +14,8 @@ from .errors import (
 from .forms import build_form_data
 from .models import CheckinResult, beijing_now
 from .state import StateStore
+
+logger = logging.getLogger(__name__)
 
 
 def run_once(config, force=False, notifier=None, client_factory=None):
@@ -89,7 +92,12 @@ def run_once(config, force=False, notifier=None, client_factory=None):
             detail=_short(payload),
             synced=bool(overrides),
         )
-        store.mark_success(date_str, result.to_dict())
+        try:
+            store.mark_success(date_str, result.to_dict())
+        except Exception:
+            # 已经提交成功了，状态文件写不进去不该把成功报成失败。
+            # 下一次跑会撞上「已达上限」，按成功处理，能自愈。
+            logger.warning("[xuexit] 提交成功但状态文件写入失败：%s", store.path)
         return result
     except AlreadySubmitted as exc:
         # 每天只能交一次：超星说"已达上限"，说明今天已经打过了（可能是本人手动打的）。

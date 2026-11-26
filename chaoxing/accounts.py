@@ -1,9 +1,12 @@
 """账号绑定存储：谁对应谁的 cookie，落盘持久化。"""
 import json
+import logging
 import os
 import tempfile
 import time
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 SCHEMA_VERSION = 1
 
@@ -23,6 +26,11 @@ class AccountStore:
         self.key_path = Path(key_path) if key_path else self.path.parent / "secret.key"
         self._fernet = None
         self.data = {"version": SCHEMA_VERSION, "accounts": {}}
+        #: 加载时的问题，供自检展示；空串表示一切正常
+        self.load_error = ""
+        self.quarantined = ""
+        self.decrypt_failed = 0
+        self.invalid_records = 0
         self.load()
 
     # ---------- 加密 ----------
@@ -64,28 +72,90 @@ class AccountStore:
             return value  # 历史明文，原样返回
         cipher = self._cipher()
         if cipher is None:
+            logger.warning("[xuexit] 有密文但环境缺 cryptography，Cookie 读不出来")
             return ""
         try:
             return cipher.decrypt(text[len(COOKIE_PREFIX):].encode()).decode()
         except Exception:
+            # 密钥换了 / 密文坏了：别静默变空串，让上层能报出来
+            logger.warning("[xuexit] 一条 Cookie 解不开（密钥不匹配或密文损坏）")
             return ""
+
+    def _quarantine(self):
+        """把读不出来的账号文件挪走留证据，而不是原地覆盖。"""
+        try:
+            target = self.path.with_name(
+                self.path.name + ".corrupt-" + time.strftime("%Y%m%d-%H%M%S"))
+            os.replace(self.path, target)
+            try:
+                os.chmod(target, 0o600)
+            except OSError:
+                pass
+            self.quarantined = str(target)
+        except OSError:
+            pass
 
     # ---------- 持久化 ----------
     def load(self):
+        """读账号文件。坏了要降级，不能让整个插件起不来。
+
+        解析失败 / 结构不对 → 把坏文件改名留证据，空账号启动，原因写进 load_error。
+        单纯读不动（权限、占用）→ 只记原因，不动文件。
+        """
+        self.load_error = ""
+        self.quarantined = ""
+        self.decrypt_failed = 0
+        self.invalid_records = 0
         if not self.path.exists():
             return self
-        with open(self.path, "r", encoding="utf-8") as fh:
-            raw = json.load(fh)
+        try:
+            with open(self.path, "r", encoding="utf-8") as fh:
+                raw = json.load(fh)
+        except ValueError as exc:
+            self.load_error = "账号文件不是合法 JSON：" + str(exc)
+            self._quarantine()
+            logger.warning("[xuexit] %s（已留证据，按空账号启动）", self.load_error)
+            return self
+        except OSError as exc:
+            self.load_error = "账号文件读不动：" + str(exc)
+            logger.warning("[xuexit] %s", self.load_error)
+            return self
+
         if isinstance(raw, dict) and "accounts" in raw:
             self.data = raw
         elif isinstance(raw, dict):
             self.data = {"version": SCHEMA_VERSION, "accounts": raw}
         else:
-            raise ValueError("账号文件格式不对")
+            self.load_error = "账号文件格式不对（顶层不是对象）"
+            self._quarantine()
+            logger.warning("[xuexit] %s（已留证据，按空账号启动）", self.load_error)
+            return self
+
+        accounts = self.data.get("accounts")
+        if not isinstance(accounts, dict):
+            self.load_error = "账号文件的 accounts 字段不是对象"
+            self._quarantine()
+            self.data = {"version": SCHEMA_VERSION, "accounts": {}}
+            logger.warning("[xuexit] %s", self.load_error)
+            return self
+
         # 内存里一律用明文；落盘时才加密
-        for record in self.data.get("accounts", {}).values():
-            if isinstance(record, dict) and isinstance(record.get("cookie"), str):
-                record["cookie"] = self._decrypt(record["cookie"])
+        for key in list(accounts):
+            record = accounts[key]
+            if not isinstance(record, dict):
+                # 下游一律按 dict 用，留着会崩；剔掉并记数，原文件下次保存前仍在磁盘上
+                self.invalid_records += 1
+                accounts.pop(key, None)
+                continue
+            if isinstance(record.get("cookie"), str):
+                original = record["cookie"]
+                record["cookie"] = self._decrypt(original)
+                if original.startswith(COOKIE_PREFIX) and not record["cookie"]:
+                    self.decrypt_failed += 1
+        if self.invalid_records:
+            logger.warning("[xuexit] %d 条账号记录结构不对，已跳过", self.invalid_records)
+        if self.decrypt_failed:
+            logger.warning("[xuexit] %d 个账号的 Cookie 解不开，需要重新扫码", self.decrypt_failed)
         return self
 
     def save(self):

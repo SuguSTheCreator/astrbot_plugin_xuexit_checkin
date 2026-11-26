@@ -684,6 +684,32 @@ class SettingsApi:
         else:
             add("超星账号", "ok", "%d 个，全部正常" % len(users))
 
+        store = getattr(plugin, "store", None)
+        if store is not None:
+            from pathlib import Path
+
+            load_error = getattr(store, "load_error", "")
+            quarantined = getattr(store, "quarantined", "")
+            if load_error:
+                detail = load_error
+                if quarantined:
+                    detail += "；坏文件已留证据：" + Path(quarantined).name
+                add("账号文件", "error", detail)
+            else:
+                add("账号文件", "ok", "可读，结构正常")
+
+            broken = int(getattr(store, "decrypt_failed", 0) or 0)
+            invalid = int(getattr(store, "invalid_records", 0) or 0)
+            if broken or invalid:
+                parts = []
+                if broken:
+                    parts.append("%d 个 Cookie 解不开（密钥不匹配或密文损坏），需重新扫码" % broken)
+                if invalid:
+                    parts.append("%d 条记录结构不对，已跳过" % invalid)
+                add("账号数据", "error", "；".join(parts))
+            else:
+                add("账号数据", "ok", "全部可解密，结构正常")
+
         accepted = bool(config.get("CONSENT_ACCEPTED", True))
         at = str(config.get("CONSENT_AT", "") or "")
         src = str(config.get("CONSENT_AT_SOURCE", "") or "")
