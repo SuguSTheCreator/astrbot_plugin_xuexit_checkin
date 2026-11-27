@@ -63,7 +63,7 @@
 | 能力 | 说明 |
 |---|---|
 | **多账号** | 一个机器人管若干个同学，每人一份独立状态，互不干扰 |
-| **扫码绑定** | 学习通 App 扫一扫即可，不用手动抓 Cookie |
+| **扫码绑定** | XueXiTong App 扫一扫即可，不用手动抓 Cookie |
 | **幂等** | 同一天重复运行会自动跳过，不会重复提交 |
 | **随机时间** | 所有账号随机铺在指定时间窗口内，避免同一秒集中请求 |
 | **失败重试** | 失败后自动再试一次 |
@@ -217,7 +217,7 @@ Windows：任务计划程序 → 新建基本任务 → 每天 08:05 → 程序�
 | 一台常开机的机器 | 家里电脑 / 云服务器都行。关机 = 当天不打卡 |
 | AstrBot | 下一步一行命令装好 |
 | 一个 QQ 机器人 | 第 3 步，这一步最费劲 |
-| 表单链接 | 学习通 App →「已提交的记录」→ 点开那条日报 → 右上角「…」→ 分享 → 复制链接 |
+| 表单链接 | XueXiTong App →「已提交的记录」→ 点开那条日报 → 右上角「…」→ 分享 → 复制链接 |
 
 ### 1. 装 AstrBot
 
@@ -294,7 +294,7 @@ https://github.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin
 ### 5. 绑定账号
 
 ```text
-⑥ 用户 → 「扫码添加用户」→ 填个名字 → 本人用学习通 App 扫
+⑥ 用户 → 「扫码添加用户」→ 填个名字 → 本人用 XueXiTong App 扫
 ```
 
 > 云服务器部署：扫码会被平台拦住，需要先开「④ 登录助手」（见「登录助手」一节）。
@@ -445,7 +445,7 @@ python standalone/cli.py --config config.local.json --dry-run
 
 | 字段 | 说明 |
 |---|---|
-| `cookie` | 登录超星后的 Cookie（等于账号密码，**绝不要提交**） |
+| `cookie` | 登录 Chaoxing 后的 Cookie（等于账号密码，**绝不要提交**） |
 | `form_id` / `enc` / `fid_enc` / `state_fid` | 表单与学校参数 |
 | `uuid` / `submit_version` | 表单实例参数 |
 | `form_template` | `formIdValueData` 原文 |
@@ -455,7 +455,7 @@ python standalone/cli.py --config config.local.json --dry-run
 
 完整步骤见 **[docs/HOWTO-CAPTURE.md](docs/HOWTO-CAPTURE.md)**，最快 2 分钟：
 
-1. 学习通 App →「已提交的记录」→ 点开那条日报 → 右上角「…」→ 分享 → 复制链接；
+1. XueXiTong App →「已提交的记录」→ 点开那条日报 → 右上角「…」→ 分享 → 复制链接；
 2. 面板「③ 运行设置」→ 粘贴链接 →「解析并保存」，四个参数自动填好；
 3. 「⑥ 用户」→ 扫码添加用户（登录状态自动加密保存，**不用手抄 Cookie**）；
 4. 打开「演练模式」→ 点「试跑」验证，通过后关掉演练模式。
@@ -539,13 +539,13 @@ python standalone/cli.py --config config.local.json --dry-run
 - 服务器地址、Cookie 只写在本地配置里，**不要提交到仓库**；
 - `config.local.json`、`accounts.json`、`state/`、`.secrets/` 已在 `.gitignore`；
 - Cookie 等同于账号密码，泄露即失守；删除用户时请一并清理；
-- 登录助手只允许访问超星域名，不做通用代理。
+- 登录助手只允许访问 Chaoxing 域名，不做通用代理。
 
 ---
 
 ## 免责声明
 
-本项目仅供个人学习与自动化实践。使用前请确认符合所在学校的规定与超星用户协议，**使用后果自负**。
+本项目仅供个人学习与自动化实践。使用前请确认符合所在学校的规定与 Chaoxing 用户协议，**使用后果自负**。
 本项目不收集、不上传任何用户数据。
 
 ---

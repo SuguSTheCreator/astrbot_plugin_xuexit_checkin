@@ -69,7 +69,7 @@ python standalone/cli.py --config config.local.json --dry-run
 python standalone/cli.py --config config.local.json
 ```
 
-扫码那步会把二维码存成 `qr.png`，打开它用学习通 App 扫，手机上点确认即可。
+扫码那步会把二维码存成 `qr.png`，打开它用 XueXiTong App 扫，手机上点确认即可。
 云服务器上可能失败（出口 IP 过不了登录环境校验），换本机跑或见第 7 节。
 
 > 逐步截图版见 README 的「快速开始（路线 A）」。
@@ -238,7 +238,7 @@ AstrBot WebUI → 数据与日志 → 日志
    它会回一串会话标识（UMO），形如 qqbot:FriendMessage:XXXX
 2. 复制它 → 面板「⑦ 权限与通知」→「主账号 / 会话」→ 添加
    （也可以用 /whoami 拿 openid，填到「主账号 / openid」，换群也认得你）
-3. 面板「⑥ 用户」→「扫码添加用户」→ 填名字 → 本人用学习通 App 扫
+3. 面板「⑥ 用户」→「扫码添加用户」→ 填名字 → 本人用 XueXiTong App 扫
 4. 面板「⑤ 自检」→ 全绿即可
 ```
 

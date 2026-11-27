@@ -118,4 +118,4 @@ gate(text, role, allow_self_bind=False, member_allow_all=False, bare=False)
 | 主账号白名单 = 异常 | 两个名单都空，任何人都能用全部命令 | 到「权限与通知」补一个 openid |
 | 登录通道 = 中继在但出口不通 | 服务器侧中继在，你电脑上的助手没开 | 双击 start-helper，再点自检 |
 | 同意留痕 = 补记 | 同意时间不是本人点出来的 | 重新点一次勾选 |
-| 超星账号 = 过期 | Cookie 失效 | 重新扫码 |
+| Chaoxing 账号 = 过期 | Cookie 失效 | 重新扫码 |
