@@ -134,7 +134,7 @@ pip install -r requirements.txt
 ### A2. 拿表单链接
 
 ```text
-学习通 App →「已提交的记录」→ 点开那条日报
+XueXiTong App →「已提交的记录」→ 点开那条日报
 → 右上角「…」→ 分享 → 复制链接
 → 发到电脑（微信文件传输助手就行）
 ```
@@ -157,7 +157,7 @@ python standalone/cli.py --login --fid 你的学校fid --out config.local.json
 ```
 
 ```text
-二维码存成 qr.png → 打开它 → 学习通 App 扫 → 手机上点确认
+二维码存成 qr.png → 打开它 → XueXiTong App 扫 → 手机上点确认
 命令会自动把 Cookie 写进同一个配置文件
 ```
 
