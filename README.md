@@ -12,7 +12,7 @@
 
 > **兼容性**：适配常见高校「健康日报」类表单（含 XUEXITONG 类表单）。仓库**不附带任何学校的真实参数**，参数需按 [参数获取说明](docs/HOWTO-CAPTURE.md) 自行获取。
 
-> ⚠️ **本项目完全免费开源。** 任何在闲鱼、淘宝等平台收费售卖的，均非作者授权；请直接使用本仓库或 AstrBot 插件市场。
+> ⚠️ **本项目完全免费开源。** 任何在闲鱼、淘宝等平台收费售卖的，均非作者授权；请直接使用本仓库（暂未上架插件市场）。
 
 ---
 
@@ -234,7 +234,9 @@ docker run -d --name astrbot -p 6185:6185 \
 ### 2. 装本插件
 
 ```text
-面板 → 插件市场 → 搜索「健康日报自动填写」→ 安装 → 重载插件
+面板 → 插件市场 → 右上角「安装插件」→ 粘贴仓库地址：
+https://github.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin
+→ 安装 → 重载插件（暂未上架市场，搜名字搜不到）
 ```
 
 装不上就手动放：把本仓库整个文件夹扔进 `AstrBot/data/plugins/`，重启 AstrBot。
@@ -336,7 +338,7 @@ docker run -d --name astrbot -p 6185:6185 \
 
 | 当初怎么装的 | 怎么升级 | 说明 |
 |---|---|---|
-| **插件市场** | 面板 → 插件市场 → 该插件「更新」 | 只有我们 bump 了版本号，面板才提示有更新 |
+| **粘贴仓库地址装的** | 面板该插件「更新」 | 只有我们 bump 了版本号，面板才提示有更新 |
 | **上传 ZIP** | 下载新 Release 的 zip → 面板上传替换 | 不用装 git，见下方下载地址 |
 | **git clone / 手动放目录** | `git pull` → 重启 AstrBot | 手动放的目录没有 git，就重新下载 zip 覆盖 |
 
@@ -375,10 +377,32 @@ data/plugin_data/astrbot_plugin_xuexit_checkin/         ← 账号 / 状态 / �
 
 ### 用法一：AstrBot 插件（推荐）
 
+**本插件暂未上架插件市场，所以搜名字搜不到。** 用下面任一种方式装：
+
+**方式 1：粘贴仓库地址（最简单）**
+
 ```text
-1. AstrBot 面板 → 插件市场 → 搜索「健康日报自动填写」→ 安装
-2. 重载插件
-3. 面板左侧「扩展功能」→「健康日报设置」→ 按页面提示操作
+面板 → 插件市场 → 右上角「安装插件」→ 粘贴：
+https://github.com/SuguSTheCreator/astrbot_plugin_xuexit_checkin
+```
+
+**方式 2：上传运行包 zip（不用装 git）**
+
+```text
+去 Releases 下 astrbot_plugin_xuexit_checkin-v<版本>.zip（约 0.12 MB）
+面板 → 插件市场 → 上传 zip
+```
+
+**方式 3：手动放目录**
+
+```text
+把仓库整个文件夹放进 AstrBot/data/plugins/ → 重启 AstrBot
+```
+
+装完之后：
+
+```text
+重载插件 → 面板左侧「扩展功能」→「健康日报设置」→ 按页面提示操作
 ```
 
 ### 用法二：命令行（无机器人也能跑）
